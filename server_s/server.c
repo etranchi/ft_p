@@ -32,12 +32,13 @@ int		create_server(int port)
 	sin.sin_port = htons(port);
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	bind(sock, (const struct sockaddr *)&sin, sizeof(sin));
-	listen(sock, 42);
+	listen(sock, port);
 
 	return (sock);
 }
 
-int		main(int ac, char **av) {
+int		main(int ac, char **av)
+{
 	int port;
 	int sock;
 	unsigned int cslen;
@@ -46,7 +47,7 @@ int		main(int ac, char **av) {
 	int cs;
 	char buf[100];
 	if (ac < 2)
-		return error("No args");
+		return error("Usage ./server <port>\n");
 	port = ft_atoi(av[1]);
 	sock = create_server(port);
 	cs = accept(sock, (struct sockaddr *)&csin, &cslen);

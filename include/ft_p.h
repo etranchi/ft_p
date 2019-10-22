@@ -22,4 +22,6 @@
 # define ERROR -1
 # define SUCCES 1
 
+# define CMDS (char*[]){ "ls", "cd", "get", "put", "pwd", "quit", NULL}
+
 #endif

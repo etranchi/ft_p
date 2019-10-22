@@ -31,9 +31,9 @@ int		create_server(int port)
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(port);
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-	bind(sock, (const struct sockaddr *)&sin, sizeof(sin));
-	listen(sock, port);
-
+	if (bind(sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
+		error("Error binding\n");
+	listen(sock, 42);
 	return (sock);
 }
 
@@ -43,18 +43,19 @@ int		main(int ac, char **av)
 	int sock;
 	unsigned int cslen;
 	struct sockaddr_in csin;
-	int r;
+	int size_line;
 	int cs;
-	char buf[100];
+	char line[100];
 	if (ac < 2)
 		return error("Usage ./server <port>\n");
 	port = ft_atoi(av[1]);
 	sock = create_server(port);
 	cs = accept(sock, (struct sockaddr *)&csin, &cslen);
-	r = read(cs, &buf, 99);
-	if (r > 0)
+	while((size_line = read(cs, &line, 99)) > 0)
 	{
-		ft_putstr(buf);
+		line[size_line] = 0;
+		ft_putstr(line);
+		write(1, "\n", 1);
 	}
 	close(cs);
 	close(sock);

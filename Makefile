@@ -32,8 +32,8 @@ clean:
 	@ make -C lib/libft clean
 
 fclean: clean
-	@ /bin/rm -f $("./" + $(CLIENT))
-	@ /bin/rm -f $("./" + $(SERVER))
+	@ /bin/rm -f $(CLIENT)
+	@ /bin/rm -f $(SERVER)
 	@ make -C lib/libft fclean
 
 re: fclean all

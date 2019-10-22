@@ -10,7 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef FT_P
+#ifndef FT_P_H
+# define FT_P_H
 # include <stdio.h>
 # include <stdlib.h>
 # include <sys/socket.h>
@@ -20,8 +21,18 @@
 # include "../lib/libft/libft.h"
 # define FT_P
 # define ERROR -1
-# define SUCCES 1
-
+# define SUCCESS 1
+# define STDOUT 1
 # define CMDS (char*[]){ "ls", "cd", "get", "put", "pwd", "quit", NULL}
+
+typedef struct		s_env
+{
+	int				sock;
+	int				c_sock;
+	int				port;
+	char			*cmd;
+	char			*res;
+	int				error;
+}					t_env;
 
 #endif

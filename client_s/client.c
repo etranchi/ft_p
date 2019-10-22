@@ -9,77 +9,101 @@
 /*   Updated: 2019/10/21 15:41:49 by etranchi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 #include "../include/ft_p.h"
 
-int		error(char *err)
+void	error(char *reason)
 {
-	ft_putstr(err);
-	return (ERROR);
+	ft_putstr("ERROR : ");
+	ft_putstr(reason);
+	exit(1);
 }
 
 
-int		create_client(char *addr, int port)
+void	create_client(t_env *e, char *addr)
 {
-	int					sock;
 	struct protoent		*proto;
 	struct sockaddr_in	sin;
 
 	proto = getprotobyname("tcp");
 	if (proto == 0)
-		return (ERROR);
-	sock = socket(PF_INET, SOCK_STREAM,	proto->p_proto);
+		error("Proto.\n");
+	e->sock = socket(PF_INET, SOCK_STREAM,	proto->p_proto);
 	sin.sin_family = AF_INET;
-	sin.sin_port = htons(port);
+	sin.sin_port = htons(e->port);
 	sin.sin_addr.s_addr = inet_addr(addr);
-	if (connect(sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
-		error("Error Connection\n");
-	return (sock);
+	if (connect(e->sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
+		error("Connect.\n");
 }
 
-void send_cmd(char *cmd) 
+void send_cmd(t_env *e) 
 {
-	ft_putstr("3");
-	ft_putstr(cmd);
-	ft_putstr("4");
+	e->cmd = ft_strjoin(e->cmd, "\n");	
+	write(e->sock, e->cmd, ft_strlen(e->cmd));
+
 }
 
-int check_cmd(char *cmd)
+void check_cmd(t_env *e)
 {
 	int i;
+	size_t cmd_len;
+	size_t CMDS_LEN;
 
 	i = -1;
-	while (CMDS[++i])
+	e->error = 0;
+	while (CMDS[++i] && e->cmd)
 	{
-		ft_putstr(CMDS[i]);
-
-		printf("%s %zu\n", cmd, ft_strlen(cmd));
-		if (cmd && ft_strlen(cmd) && !ft_strcmp(CMDS[i], cmd)) {
-			ft_putstr("1");
-			send_cmd(cmd);
-			ft_putstr("2");		
+		cmd_len = ft_strlen(e->cmd);
+		CMDS_LEN = ft_strlen(CMDS[i]);
+		if (!ft_strncmp(CMDS[i], e->cmd, CMDS_LEN))
+		{
+			printf("cmd_len ; %zu, CMDS_len : %zu \n", cmd_len, CMDS_LEN);
+			if ((cmd_len == CMDS_LEN) | (cmd_len > CMDS_LEN && e->cmd[CMDS_LEN] == ' '))
+			{
+				send_cmd(e);
+				return ;
+			}
 		}
 	}
-	return (0);
+	ft_putstr("ERROR : wrong command.\n");
+	e->error = 1;
+	return ;
+}
+
+void prompt(void) {
+	ft_putstr("(.)(.)$>");
 }
 
 int		main(int ac, char **av)
 {
-	int port;
-	int sock;
-	char *line;
+	t_env	*e;
+	char line[4096];
+	int size_line;
 
+	
 	if (ac < 3)
-		return error("Usage ./client <addr> <port>\n");
-	port = ft_atoi(av[2]);
-	sock = create_client(av[1],port);
-	while (get_next_line(1, &line) > 0)
+		error("Usage ./client <addr> <port>\n");
+	if (!(e = (t_env *)malloc(sizeof(t_env))))
+		error("Malloc.\n");
+	ft_memset(e, 0, sizeof(t_env));
+	e->port = ft_atoi(av[2]);
+	create_client(e, av[1]);
+	prompt();
+	while (get_next_line(STDOUT, &e->cmd) > 0)
 	{
-		write(1, line, ft_strlen(line));
-		check_cmd(line);
-		ft_putstr("5");
-		write(sock, line, ft_strlen(line));
-		ft_putstr("6");
+		printf("la ?\n");
+		check_cmd(e);
+		while (!e->error && (size_line = read(e->sock, line, 4095)) > 0)
+		{
+			printf("(%d)\n", size_line);
+			ft_putstr("Response : ");
+			printf("%s\n", line);
+			printf("je me perds");
+			break ;
+		}
+		printf("ici ?\n");
+		prompt();
 	}
-	close(sock);
+	close(e->sock);
 	return (0);
 }

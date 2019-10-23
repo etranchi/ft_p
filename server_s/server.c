@@ -12,6 +12,10 @@
 
 #include "../include/ft_p.h"
 
+
+
+void put_on_client(t_env *e, char *msg);
+
 void	error(char *reason)
 {
 	ft_putstr("ERROR : ");
@@ -43,23 +47,6 @@ void	create_server(t_env *e)
 }
 
 
-void send_res(t_env *e) 
-{
-	if (e->res && ft_strlen(e->res))
-	{	
-		//int i = -1;
-		// char buf[4096];
-		//int j = -1;
-		// while (e->res[++i] || i < size)
-		// {
-		// 	printf("%i %c \n", e->res[i], e->res[i]);
-		// }
-		write(e->c_sock, e->res, ft_strlen(e->res));
-		printf("Sending to client...\n");
-	}
-}
-
-
 void	perform_ls(t_env *e, char **cmd);
 
 
@@ -70,40 +57,38 @@ void perform_put(t_env *e, char **cmd){(void)e; (void)cmd;}
 void perform_pwd(t_env *e){
 	char *to_send;
 	to_send = ft_strjoin(e->curr_pwd, "\n");
-	write(e->c_sock, to_send, ft_strlen(to_send));
+	// write(e->c_sock, to_send, ft_strlen(to_send));
+	put_on_client(e, to_send);
 }
 
 void perform_quit(t_env *e, char **cmd)
 {
-	write(e->c_sock, cmd[0], ft_strlen(cmd[0]));
+	// write(e->c_sock, cmd[0], ft_strlen(cmd[0]));
+	put_on_client(e, cmd[0]);
 	e->error = 1;
 }
 
-void put_on_client(t_env *e, char *err)
+void put_on_client(t_env *e, char *msg)
 {
-	write(e->c_sock, err, ft_strlen(err));
+	write(e->c_sock, msg, ft_strlen(msg));
 }
 
 void perform_cd(t_env *e, char **cmd)
 {
-
 	char *new_pwd;
-	int i = -1;
+
 	new_pwd = NULL;
-	while (cmd[++i])
-		printf("%s\n", cmd[i]);
-	printf("%s\n", e->pwd);
-	printf("ret chdir %d\n", chdir(cmd[1] ?cmd[1] : e->pwd));
+	chdir(cmd[1] ? cmd[1] : ".");
 	e->curr_pwd = getcwd(new_pwd, 0);
-	printf("%s\n", e->curr_pwd);
 	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
 	{
 		put_on_client(e, "You think i'm a fool ? You can't do this.\n");
 		chdir(e->pwd);
 		e->curr_pwd = e->pwd;
-		printf("error setting : %s\n", e->pwd);
+	} else {
+		put_on_client(e, "ntd");	
 	}
-	put_on_client(e, "ntd");
+	
 }
 
 void perform_cmd(t_env *e, char *cmd)

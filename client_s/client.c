@@ -69,7 +69,8 @@ void check_cmd(t_env *e)
 	return ;
 }
 
-void prompt(void) {
+void prompt(void)
+{
 	ft_putstr("(.)(.)$>");
 }
 
@@ -121,10 +122,11 @@ void go_read_all_buff(t_env *e)
 	while((size_read = read(e->sock, buff, 4095)) > 0)
 	{
 		buff[size_read] = '\0';
-		if (size_read >= 3 && !ft_strncmp(buff, "ntd", 3)){
+		if (size_read >= 3 && !ft_strncmp(buff, "ntd", 3))
+		{ // ntd = nothing to do
 			printf("je passe la\n");
 			break ;
-		} // ntd = nothing to do
+		}
 			
 		if (size_read >= 4 && !ft_strncmp(buff, "quit", 4))
 		{
@@ -153,15 +155,8 @@ int		main(int ac, char **av)
 	while (get_next_line(STDOUT, &e->cmd) > 0)
 	{
 		check_cmd(e);
-		if (!e->error) {
+		if (!e->error)
 			go_read_all_buff(e);
-			// if (!ft_strncmp(e->res, "quit", 4)){
-			// 	write(e->sock, "\0", 1);
-			// 	close(e->sock);
-			// 	return (0);
-			// }
-				// printf("%s", e->res);
-		}
 		prompt();
 	}
 		

@@ -57,7 +57,6 @@ void check_cmd(t_env *e)
 		CMDS_LEN = ft_strlen(CMDS[i]);
 		if (!ft_strncmp(CMDS[i], e->cmd, CMDS_LEN))
 		{
-			printf("cmd_len ; %zu, CMDS_len : %zu \n", cmd_len, CMDS_LEN);
 			if ((cmd_len == CMDS_LEN) | (cmd_len > CMDS_LEN && e->cmd[CMDS_LEN] == ' '))
 			{
 				send_cmd(e);
@@ -74,12 +73,74 @@ void prompt(void) {
 	ft_putstr("(.)(.)$>");
 }
 
+void	*ft_memncpy(void *dst, const void *src, int start,size_t n)
+{
+	char	*d;
+	char	*s;
+
+	d = (char *)dst;
+	s = (char *)src;
+	d = d + start;
+	while (n--)
+	{
+		*d = *s;
+		d++;
+		s++;
+	}
+	return (dst);
+}
+
+void my_join(char *s1, char *s2, int size_read)
+{
+	char *tmp;
+
+	if (!s1 && s2){
+		s1 = ft_memalloc(size_read);
+		ft_memcpy(s1, s2, size_read);
+		return ;
+	}
+	if (s1 && s2) 
+	{
+		tmp = s1;
+		s1 = ft_memalloc(size_read + ft_strlen(tmp));
+		s1 = ft_memcpy(s1,tmp, ft_strlen(tmp));
+		s1 = ft_memncpy(s1,s2, ft_strlen(s1), ft_strlen(tmp));
+		s1[ft_strlen(s1) + ft_strlen(tmp)] = 0;
+		return ;
+	}
+	printf("je dois pas passer ici normalement\n");
+
+}
+
+void go_read_all_buff(t_env *e)
+{
+	char buff[4096];
+	int size_read;
+
+	e->res = NULL;
+	while((size_read = read(e->sock, buff, 4095)) > 0)
+	{
+		buff[size_read] = '\0';
+		if (size_read >= 3 && !ft_strncmp(buff, "ntd", 3)){
+			printf("je passe la\n");
+			break ;
+		} // ntd = nothing to do
+			
+		if (size_read >= 4 && !ft_strncmp(buff, "quit", 4))
+		{
+			printf("je passe ici\n");
+			close(e->sock);
+			exit(1);
+		}
+		printf("%s",buff);
+		if (size_read < 4095)
+			break ;
+	}
+}
+
 int		main(int ac, char **av)
 {
 	t_env	*e;
-	char line[4096];
-	int size_line;
-
 	
 	if (ac < 3)
 		error("Usage ./client <addr> <port>\n");
@@ -91,19 +152,19 @@ int		main(int ac, char **av)
 	prompt();
 	while (get_next_line(STDOUT, &e->cmd) > 0)
 	{
-		printf("la ?\n");
 		check_cmd(e);
-		while (!e->error && (size_line = read(e->sock, line, 4095)) > 0)
-		{
-			printf("(%d)\n", size_line);
-			ft_putstr("Response : ");
-			printf("%s\n", line);
-			printf("je me perds");
-			break ;
+		if (!e->error) {
+			go_read_all_buff(e);
+			// if (!ft_strncmp(e->res, "quit", 4)){
+			// 	write(e->sock, "\0", 1);
+			// 	close(e->sock);
+			// 	return (0);
+			// }
+				// printf("%s", e->res);
 		}
-		printf("ici ?\n");
 		prompt();
 	}
+		
 	close(e->sock);
 	return (0);
 }

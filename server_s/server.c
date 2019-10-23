@@ -43,7 +43,7 @@ void	create_server(t_env *e)
 }
 
 
-void send_res(t_env *e, int size) 
+void send_res(t_env *e) 
 {
 	if (e->res && ft_strlen(e->res))
 	{	
@@ -54,71 +54,111 @@ void send_res(t_env *e, int size)
 		// {
 		// 	printf("%i %c \n", e->res[i], e->res[i]);
 		// }
-		
-		printf("%s", e->res);
-		// e->res = ft_strjoin(e->res, "\0");
-		e->res[size - 1] = 0;
-		write(e->c_sock, e->res, size);
+		write(e->c_sock, e->res, ft_strlen(e->res));
 		printf("Sending to client...\n");
 	}
 }
 
-void	perform_cmd(t_env *e, char *cmd)
-{
-	int link[2];
-	pid_t pid;
- 	char res[4096];
 
- 	(void)e;
- 	if (pipe(link) == -1)
- 		error("Pipe.\n");
-	if ((pid = fork()) == -1)
+void	perform_ls(t_env *e, char **cmd);
+
+
+
+void perform_get(t_env *e, char **cmd){(void)e; (void)cmd;}
+void perform_put(t_env *e, char **cmd){(void)e; (void)cmd;}
+
+void perform_pwd(t_env *e){
+	char *to_send;
+	to_send = ft_strjoin(e->curr_pwd, "\n");
+	write(e->c_sock, to_send, ft_strlen(to_send));
+}
+
+void perform_quit(t_env *e, char **cmd)
+{
+	write(e->c_sock, cmd[0], ft_strlen(cmd[0]));
+	e->error = 1;
+}
+
+void put_on_client(t_env *e, char *err)
+{
+	write(e->c_sock, err, ft_strlen(err));
+}
+
+void perform_cd(t_env *e, char **cmd)
+{
+
+	char *new_pwd;
+	int i = -1;
+	new_pwd = NULL;
+	while (cmd[++i])
+		printf("%s\n", cmd[i]);
+	printf("%s\n", e->pwd);
+	printf("ret chdir %d\n", chdir(cmd[1] ?cmd[1] : e->pwd));
+	e->curr_pwd = getcwd(new_pwd, 0);
+	printf("%s\n", e->curr_pwd);
+	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
+	{
+		put_on_client(e, "You think i'm a fool ? You can't do this.\n");
+		chdir(e->pwd);
+		e->curr_pwd = e->pwd;
+		printf("error setting : %s\n", e->pwd);
+	}
+	put_on_client(e, "ntd");
+}
+
+void perform_cmd(t_env *e, char *cmd)
+{
+	char **tab_cmd;
+
+	tab_cmd = ft_strsplit(cmd, ' ');
+	if (!ft_strcmp(tab_cmd[0], "ls"))
+		perform_ls(e, tab_cmd);
+	else if (!ft_strcmp(tab_cmd[0], "cd"))
+		perform_cd(e, tab_cmd);
+	else if (!ft_strcmp(tab_cmd[0], "get"))
+		perform_get(e, tab_cmd);
+	else if (!ft_strcmp(tab_cmd[0], "put"))
+		perform_put(e, tab_cmd);
+	else if (!ft_strcmp(tab_cmd[0], "pwd"))
+		perform_pwd(e);
+	else if (!ft_strcmp(tab_cmd[0], "quit"))
+		perform_quit(e, tab_cmd);
+	else 
+		write(e->c_sock, "others\n", 7);
+}
+
+
+void set_pwd(t_env *e)
+{
+	char *buff;
+
+	buff = NULL;
+
+	buff = getcwd(buff, 0);
+	e->pwd = buff;
+	e->curr_pwd = ft_strdup(e->pwd);
+}
+
+void	perform_ls(t_env *e, char **cmd)
+{
+	pid_t pid;
+
+ 	pid = fork();
+
+ 	// needd to cmd[3] if there '..' can't ls parent folder..
+	if (pid == -1)
     	error("Fork.\n");
     if (pid == 0)
     {
-    	dup2 (link[1], STDOUT_FILENO);
-    	close(link[0]);
-    	close(link[1]);
-    	/// getpwd()
-    	execl("/bin/ls", cmd, "-1", (char *)0);
-    	exit(1);
+    	dup2(e->c_sock, 1);
+    	close(e->c_sock);
+    	cmd[0] = ft_strjoin("/bin/", cmd[0]);
+    	if (cmd[2])
+    		cmd[2] = e->pwd;
+    	execv(cmd[0], cmd);
+    	close(e->c_sock);
     }
-	int size_read;
-	while (1) 
-	{
-		size_read = read(link[0], res, sizeof(res));
-		if (size_read == -1)
-			exit(1);
-		else if (size_read == 0)
-			break ;
-		else
-		{
-			res[size_read] = 0;
-			e->res = res;
-			send_res(e, size_read);
-			break ;
-		}
-	}
-	close(link[0]);
-	wait(0);
-    
-    /*else
-    {
-		close(link[1]);
-		int nbytes = 0;
-		if (pid) {
-			int i = 0;
-			while ((nbytes = read(link[0], res, sizeof(res))) > 0){
-				printf("(%d) %d\n", i++, pid);
-	    		printf("Output: (%.*s)\n", nbytes, res);
-	    		e->res = ft_strjoin(e->res, res);
-	    		send_res(e);
-	    	}
-	    	
-	    }
-    }*/
-    // close(link[0]);
-    // wait(0);
+	wait4(pid, 0, 0, NULL);
 }
 
 int		main(int ac, char **av)
@@ -127,21 +167,17 @@ int		main(int ac, char **av)
 	int size_line;
 	char *line;
 
-	// char bjr[100] = "Bonjour, je suis le serveur\n";
-
 	if (ac < 2)
 		error("Usage ./server <port>\n");
 	if (!(e = (t_env *)malloc(sizeof(t_env))))
 		error("Malloc.\n");
 	ft_memset(e, 0, sizeof(t_env));
+	set_pwd(e);
 	e->port = ft_atoi(av[1]);
 	create_server(e);
-	while((size_line = get_next_line(e->c_sock, &line)) > 0) 
-	{
-		// ft_putstr(line);
-		// write(1, "\n", 1);
-		perform_cmd(e, line);		
-	}
+	while(!e->error && (size_line = get_next_line(e->c_sock, &line)) > 0) 
+		perform_cmd(e, line);
+	printf("je vais close server\n");	
 	close(e->c_sock);
 	close(e->sock);
 	return (0);

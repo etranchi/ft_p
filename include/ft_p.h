@@ -27,6 +27,8 @@
 
 typedef struct		s_env
 {
+	char			*pwd;
+	char			*curr_pwd;
 	int				sock;
 	int				c_sock;
 	int				port;

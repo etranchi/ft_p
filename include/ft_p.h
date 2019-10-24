@@ -17,6 +17,7 @@
 # include <sys/socket.h>
 # include <sys/types.h>
 # include <arpa/inet.h>
+# include <sys/stat.h>
 # include <netdb.h>
 # include "../lib/libft/libft.h"
 # define FT_P
@@ -36,5 +37,13 @@ typedef struct		s_env
 	char			*res;
 	int				error;
 }					t_env;
+
+
+typedef struct 		s_data 
+{
+	int				size;
+	char 			*cmd;
+	void			*data;
+}					t_data;
 
 #endif

@@ -56,6 +56,7 @@ void perform_put(t_env *e, char **cmd){(void)e; (void)cmd;}
 
 void perform_pwd(t_env *e){
 	char *to_send;
+	
 	to_send = ft_strjoin(e->curr_pwd, "\n");
 	// write(e->c_sock, to_send, ft_strlen(to_send));
 	put_on_client(e, to_send);
@@ -136,10 +137,14 @@ void	perform_ls(t_env *e, char **cmd)
     if (pid == 0)
     {
     	dup2(e->c_sock, 1);
+    	dup2(e->c_sock, 2);
     	close(e->c_sock);
     	cmd[0] = ft_strjoin("/bin/", cmd[0]);
+    	if (cmd[1] && ft_strstr(cmd[1], "..")) {
+    		cmd[1] = NULL;
+    	}
     	if (cmd[2])
-    		cmd[2] = e->pwd;
+    		cmd[2] = e->curr_pwd;
     	execv(cmd[0], cmd);
     	close(e->c_sock);
     }
@@ -149,8 +154,8 @@ void	perform_ls(t_env *e, char **cmd)
 int		main(int ac, char **av)
 {
 	t_env *e;
-	int size_line;
-	char *line;
+	// int size_line;
+	// char *line;
 
 	if (ac < 2)
 		error("Usage ./server <port>\n");
@@ -160,8 +165,17 @@ int		main(int ac, char **av)
 	set_pwd(e);
 	e->port = ft_atoi(av[1]);
 	create_server(e);
-	while(!e->error && (size_line = get_next_line(e->c_sock, &line)) > 0) 
-		perform_cmd(e, line);
+	// while(!e->error && (size_line = get_next_line(e->c_sock, &line)) > 0) 
+	// 	perform_cmd(e, line);
+	t_data data;
+	int len_r;
+	while (1){
+		while((len_r = recv(e->c_sock, &data, sizeof(data), MSG_OOB)) > 0)
+		{
+			printf("received %d\n", len_r);
+			printf("data cmd : %s\n", data.cmd);
+		}
+	}
 	printf("je vais close server\n");	
 	close(e->c_sock);
 	close(e->sock);

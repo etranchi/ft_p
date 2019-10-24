@@ -52,7 +52,34 @@ void	perform_ls(t_env *e, char **cmd);
 
 
 void perform_get(t_env *e, char **cmd){(void)e; (void)cmd;}
-void perform_put(t_env *e, char **cmd){(void)e; (void)cmd;}
+
+void perform_put(t_env *e, char **cmd){
+	(void)e;
+	int i = -1;
+	
+	while (cmd[++i])
+		printf("%s\n", cmd[i]);
+	int size_file = ft_atoi(cmd[2]);
+	char *name_file = cmd[1];
+	printf("name_file %s\n", name_file);
+	printf("size_file %d\n", size_file);
+	put_on_client(e, "ntd");
+	char buff[size_file];
+	while (read(e->c_sock, buff, size_file))
+	{
+		printf("%s\n", buff);
+	}
+	// int file;
+	// int all_put = 0;
+	// file = fopen(name_file, "w");
+	// while (all_put < size_file)
+	// {
+	// 	write(file, cmd[3], size_file);
+	// 	all_put = size_file;
+	// }
+	// close(file);
+
+}
 
 void perform_pwd(t_env *e){
 	char *to_send;
@@ -87,7 +114,7 @@ void perform_cd(t_env *e, char **cmd)
 		chdir(e->pwd);
 		e->curr_pwd = e->pwd;
 	} else {
-		put_on_client(e, "ntd");	
+		put_on_client(e, "ntd");
 	}
 	
 }
@@ -97,17 +124,20 @@ void perform_cmd(t_env *e, char *cmd)
 	char **tab_cmd;
 
 	tab_cmd = ft_strsplit(cmd, ' ');
-	if (!ft_strcmp(tab_cmd[0], "ls"))
+	printf("strstr %s\n", cmd);
+	if (ft_strstr(tab_cmd[0], "ls"))
 		perform_ls(e, tab_cmd);
-	else if (!ft_strcmp(tab_cmd[0], "cd"))
+	else if (ft_strstr(tab_cmd[0], "cd"))
 		perform_cd(e, tab_cmd);
-	else if (!ft_strcmp(tab_cmd[0], "get"))
+	else if (ft_strstr(tab_cmd[0], "get"))
 		perform_get(e, tab_cmd);
-	else if (!ft_strcmp(tab_cmd[0], "put"))
+	else if (ft_strstr(tab_cmd[0], "put")) {
+		printf("je passe pas\n");
 		perform_put(e, tab_cmd);
-	else if (!ft_strcmp(tab_cmd[0], "pwd"))
+	}
+	else if (ft_strstr(tab_cmd[0], "pwd"))
 		perform_pwd(e);
-	else if (!ft_strcmp(tab_cmd[0], "quit"))
+	else if (ft_strstr(tab_cmd[0], "quit"))
 		perform_quit(e, tab_cmd);
 	else 
 		write(e->c_sock, "others\n", 7);
@@ -151,11 +181,12 @@ void	perform_ls(t_env *e, char **cmd)
 	wait4(pid, 0, 0, NULL);
 }
 
+
 int		main(int ac, char **av)
 {
 	t_env *e;
-	// int size_line;
-	// char *line;
+	int size_line;
+	char *line;
 
 	if (ac < 2)
 		error("Usage ./server <port>\n");
@@ -165,18 +196,10 @@ int		main(int ac, char **av)
 	set_pwd(e);
 	e->port = ft_atoi(av[1]);
 	create_server(e);
-	// while(!e->error && (size_line = get_next_line(e->c_sock, &line)) > 0) 
-	// 	perform_cmd(e, line);
-	t_data data;
-	int len_r;
-	while (1){
-		while((len_r = recv(e->c_sock, &data, sizeof(data), MSG_OOB)) > 0)
-		{
-			printf("received %d\n", len_r);
-			printf("data cmd : %s\n", data.cmd);
-		}
+	while(!e->error && (size_line = get_next_line(e->c_sock, &line)) > 0)  {
+		printf("je read %s\n", line);
+		perform_cmd(e, line);
 	}
-	printf("je vais close server\n");	
 	close(e->c_sock);
 	close(e->sock);
 	return (0);

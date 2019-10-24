@@ -19,6 +19,7 @@ void	error(char *reason)
 	exit(1);
 }
 
+void go_read_all_buff(t_env *e);
 
 void	create_client(t_env *e, char *addr)
 {
@@ -36,6 +37,9 @@ void	create_client(t_env *e, char *addr)
 		error("Connect.\n");
 }
 
+
+void send_cmd(t_env *e);
+
 void put_file(t_env *e)
 {
 	// char *line;
@@ -43,11 +47,14 @@ void put_file(t_env *e)
 	char **tab_cmd;
 	struct stat file_stat;
 
-	printf("je suis dans put\n");
+	printf("je suis dans put cmd : %s\n", e->cmd);
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	fd = open(tab_cmd[1], O_RDONLY);
 	if (fd == -1)
+	{
+		e->error = 1;
 		return ft_putstr("ERROR : file doesn't exist.\n");
+	}
 	printf("je vais put :%s\n", tab_cmd[1]);
 	if (fstat(fd, &file_stat) < 0)
 		error("Fstat.\n");
@@ -57,43 +64,37 @@ void put_file(t_env *e)
 	// printf("len = %d\n", len);
 	// if (len < 0)
 	// 	error("Failed to send file.\n");
-	char *buff = malloc(file_stat.st_size);
-	ssize_t len = read(fd, buff, file_stat.st_size);
 
-	printf("readed %zu\n", len);
-	printf("data = %s\n", buff);
-
-	// write(e->sock, )
-	e->error = 1; // debug
-}
-
-
-void send_data(t_env *e)
-{
-	t_data data;
-	int len;
-
-	// data = malloc(sizeof(t_data))
-
-	printf("s_struct : %zu, s d.size : %zu, s d.cmd : %zu, s d.data : %zu\n", sizeof(data), sizeof(data.size), sizeof(data.cmd), sizeof(data.data));
-	data.size = 10;
-	data.cmd = e->cmd;
-	data.data = ft_strdup("123456789");
-	void *tmp;
-	tmp = (void *)data;
-	if ((len = send(e->sock, tmp, sizeof(data), MSG_OOB)) == -1)
+	char *tmp_int = ft_itoa(file_stat.st_size);
+	e->cmd = ft_strjoin(e->cmd, " ");
+	e->cmd = ft_strjoin(e->cmd, tmp_int);
+	send_cmd(e);
+	char buff[file_stat.st_size];
+	go_read_all_buff(e);
+	while (read(fd, buff, file_stat.st_size))
 	{
-		error("Send.\n");
+		printf("file : %s\n", buff);
+		write(e->sock, buff, file_stat.st_size);
+		ft_bzero(buff, file_stat.st_size);
+		go_read_all_buff(e);
 	}
-	printf("Sended %d bytes\n", len);
+	// while (size_send <= file_stat.st_size)
+	// {	
 
+	// 	write(e->sock, )
+	// }
+
+
+	// write(e->sock, buff, len);
+
+
+	e->error = 1; // debug
 }
 
 void send_cmd(t_env *e) 
 {
 	e->cmd = ft_strjoin(e->cmd, "\n");
-	send_data(e);
-	// write(e->sock, e->cmd, ft_strlen(e->cmd));
+	write(e->sock, e->cmd, ft_strlen(e->cmd));
 
 }
 
@@ -113,13 +114,10 @@ void check_cmd(t_env *e)
 		{
 			if ((cmd_len == CMDS_LEN) | (cmd_len > CMDS_LEN && e->cmd[CMDS_LEN] == ' '))
 			{
-				printf("je suis la\n");
 				if (!ft_strncmp(CMDS[i], "put", CMDS_LEN)) {
-					printf("je passe bien\n");
 					put_file(e);
 				}
 				else {
-					printf("je devrais pas passer ici\n");
 					send_cmd(e);
 				}
 				return ;
@@ -186,13 +184,11 @@ void go_read_all_buff(t_env *e)
 		buff[size_read] = '\0';
 		if (size_read >= 3 && !ft_strncmp(buff, "ntd", 3))
 		{ // ntd = nothing to do
-			printf("je passe la\n");
 			break ;
 		}
 			
 		if (size_read >= 4 && !ft_strncmp(buff, "quit", 4))
 		{
-			printf("je passe ici\n");
 			close(e->sock);
 			exit(1);
 		}

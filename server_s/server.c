@@ -16,11 +16,18 @@
 
 void put_on_client(t_env *e, char *msg);
 
-void	error(char *reason)
+void	error_exit(char *reason)
 {
 	ft_putstr("ERROR : ");
 	ft_putstr(reason);
 	exit(1);
+}
+
+void	error(char *reason)
+{
+	ft_putstr("ERROR : ");
+	ft_putstr(reason);
+	ft_putstr("\n");
 }
 
 
@@ -39,11 +46,11 @@ void	create_server(t_env *e)
 	sin.sin_port = htons(e->port);
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 	if (bind(e->sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
-		error("Binding.\n");
+		error_exit("Binding.\n");
 	if (listen(e->sock, 42) == -1)
-		error("Listen.\n");
+		error_exit("Listen.\n");
 	if ((e->c_sock = accept(e->sock, (struct sockaddr *)&csin, &cslen)) == -1)
-		error("Accept.\n");
+		error_exit("Accept.\n");
 }
 
 
@@ -63,11 +70,24 @@ void perform_put(t_env *e, char **cmd){
 	char *name_file = cmd[1];
 	printf("name_file %s\n", name_file);
 	printf("size_file %d\n", size_file);
+
+	if (access(name_file, F_OK) != -1)
+		return error("File already exist.\n");
+	int fd;
+
+	if ((fd = open(name_file, O_RDONLY | O_CREAT | O_WRONLY, 0777)) < 0)
+		return error(ft_strjoin("Can't create :", name_file));
 	put_on_client(e, "ntd");
 	char buff[size_file];
-	while (read(e->c_sock, buff, size_file))
+	int len_read;
+	if ((len_read = read(e->c_sock, buff, size_file)))
 	{
+		buff[len_read] = 0;
 		printf("%s\n", buff);
+		printf("j'ai lu temps %d\n", len_read);
+		write(fd, buff, len_read);
+
+		printf("je finis d'écrire..\n");
 	}
 	// int file;
 	// int all_put = 0;
@@ -163,7 +183,7 @@ void	perform_ls(t_env *e, char **cmd)
 
  	// needd to cmd[3] if there '..' can't ls parent folder..
 	if (pid == -1)
-    	error("Fork.\n");
+    	error_exit("Fork.\n");
     if (pid == 0)
     {
     	dup2(e->c_sock, 1);
@@ -189,9 +209,9 @@ int		main(int ac, char **av)
 	char *line;
 
 	if (ac < 2)
-		error("Usage ./server <port>\n");
+		error_exit("Usage ./server <port>\n");
 	if (!(e = (t_env *)malloc(sizeof(t_env))))
-		error("Malloc.\n");
+		error_exit("Malloc.\n");
 	ft_memset(e, 0, sizeof(t_env));
 	set_pwd(e);
 	e->port = ft_atoi(av[1]);

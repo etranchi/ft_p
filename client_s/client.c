@@ -49,7 +49,8 @@ void put_file(t_env *e)
 
 	printf("je suis dans put cmd : %s\n", e->cmd);
 	tab_cmd = ft_strsplit(e->cmd, ' ');
-	fd = open(tab_cmd[1], O_RDONLY);
+	if ((fd = open(tab_cmd[1], O_RDONLY)) < 0)
+		error(ft_strjoin("Can't open :", tab_cmd[1]));
 	if (fd == -1)
 	{
 		e->error = 1;
@@ -58,6 +59,10 @@ void put_file(t_env *e)
 	printf("je vais put :%s\n", tab_cmd[1]);
 	if (fstat(fd, &file_stat) < 0)
 		error("Fstat.\n");
+	if (!S_ISREG(file_stat.st_mode)) {
+		e->error = 1;
+		return ft_putstr("ERROR : it's not a file.\n");
+	}
 	printf("File size %lld\n", file_stat.st_size);
 
 	// int len = send(e->sock, file_stat.st_size, sizeof(file_stat.st_size));
@@ -71,12 +76,13 @@ void put_file(t_env *e)
 	send_cmd(e);
 	char buff[file_stat.st_size];
 	go_read_all_buff(e);
-	while (read(fd, buff, file_stat.st_size))
+	int len_read;
+	if ((len_read = read(fd, buff, file_stat.st_size))) 
 	{
+		buff[len_read] = 0;
 		printf("file : %s\n", buff);
 		write(e->sock, buff, file_stat.st_size);
-		ft_bzero(buff, file_stat.st_size);
-		go_read_all_buff(e);
+
 	}
 	// while (size_send <= file_stat.st_size)
 	// {	
@@ -216,6 +222,7 @@ int		main(int ac, char **av)
 		if (!e->error)
 			go_read_all_buff(e);
 		prompt();
+		e->error = 0;
 	}
 		
 	close(e->sock);

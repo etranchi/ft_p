@@ -59,6 +59,8 @@ void put_file(t_env *e)
 	printf("je vais put :%s\n", tab_cmd[1]);
 	if (fstat(fd, &file_stat) < 0)
 		error("Fstat.\n");
+	printf("Rights : %d\n", file_stat.st_mode);
+	char *mode = ft_itoa(file_stat.st_mode);
 	if (!S_ISREG(file_stat.st_mode)) {
 		e->error = 1;
 		return ft_putstr("ERROR : it's not a file.\n");
@@ -73,6 +75,8 @@ void put_file(t_env *e)
 	char *tmp_int = ft_itoa(file_stat.st_size);
 	e->cmd = ft_strjoin(e->cmd, " ");
 	e->cmd = ft_strjoin(e->cmd, tmp_int);
+	e->cmd = ft_strjoin(e->cmd, " ");
+	e->cmd = ft_strjoin(e->cmd, mode);
 	send_cmd(e);
 	char buff[file_stat.st_size];
 	go_read_all_buff(e);

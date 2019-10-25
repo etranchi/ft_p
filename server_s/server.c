@@ -66,8 +66,9 @@ void perform_put(t_env *e, char **cmd){
 	
 	while (cmd[++i])
 		printf("%s\n", cmd[i]);
-	int size_file = ft_atoi(cmd[2]);
 	char *name_file = cmd[1];
+	int size_file = ft_atoi(cmd[2]);
+	int mode = ft_atoi(cmd[3]);
 	printf("name_file %s\n", name_file);
 	printf("size_file %d\n", size_file);
 
@@ -75,7 +76,7 @@ void perform_put(t_env *e, char **cmd){
 		return error("File already exist.\n");
 	int fd;
 
-	if ((fd = open(name_file, O_RDONLY | O_CREAT | O_WRONLY, 0777)) < 0)
+	if ((fd = open(name_file, O_RDONLY | O_CREAT | O_WRONLY, mode)) < 0)
 		return error(ft_strjoin("Can't create :", name_file));
 	put_on_client(e, "ntd");
 	char buff[size_file];

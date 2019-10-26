@@ -78,7 +78,6 @@ void perform_put(t_env *e, char **cmd){
 
 	if ((fd = open(name_file, O_RDONLY | O_CREAT | O_WRONLY, mode)) < 0)
 		return error(ft_strjoin("Can't create :", name_file));
-	put_on_client(e, "ntd");
 	char buff[size_file];
 	int len_read;
 	if ((len_read = read(e->c_sock, buff, size_file)))
@@ -90,6 +89,10 @@ void perform_put(t_env *e, char **cmd){
 
 		printf("je finis d'écrire..\n");
 	}
+
+
+	char *to_send = ft_strjoin("SUCCESS | put : ", name_file);
+	put_on_client(e, to_send);
 	// int file;
 	// int all_put = 0;
 	// file = fopen(name_file, "w");
@@ -102,24 +105,24 @@ void perform_put(t_env *e, char **cmd){
 
 }
 
-void perform_pwd(t_env *e){
-	char *to_send;
-	
-	to_send = ft_strjoin(e->curr_pwd, "\n");
-	// write(e->c_sock, to_send, ft_strlen(to_send));
+void perform_pwd(t_env *e)
+{
+	char *to_send = ft_strjoin("SUCCESS | pwd : ", e->curr_pwd);
 	put_on_client(e, to_send);
 }
 
 void perform_quit(t_env *e, char **cmd)
 {
 	// write(e->c_sock, cmd[0], ft_strlen(cmd[0]));
-	put_on_client(e, cmd[0]);
+	char *msg = ft_strjoin("SUCCESS | ", cmd[0]);
+	put_on_client(e, msg);
 	e->error = 1;
 }
 
 void put_on_client(t_env *e, char *msg)
 {
-	write(e->c_sock, msg, ft_strlen(msg));
+	char *to_send = ft_strjoin(msg, "\n");
+	write(e->c_sock, to_send, ft_strlen(to_send));
 }
 
 void perform_cd(t_env *e, char **cmd)
@@ -131,11 +134,11 @@ void perform_cd(t_env *e, char **cmd)
 	e->curr_pwd = getcwd(new_pwd, 0);
 	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
 	{
-		put_on_client(e, "You think i'm a fool ? You can't do this.\n");
+		put_on_client(e, "ERROR | You think i'm a fool ? You can't do this.\n");
 		chdir(e->pwd);
 		e->curr_pwd = e->pwd;
 	} else {
-		put_on_client(e, "ntd");
+		put_on_client(e, ft_strjoin("SUCCESS | path : ", e->curr_pwd));
 	}
 	
 }
@@ -198,8 +201,12 @@ void	perform_ls(t_env *e, char **cmd)
     		cmd[2] = e->curr_pwd;
     	execv(cmd[0], cmd);
     	close(e->c_sock);
+    	char *to_send = ft_strdup("SUCCESS | ls");
+		put_on_client(e, to_send);
     }
 	wait4(pid, 0, 0, NULL);
+	
+
 }
 
 

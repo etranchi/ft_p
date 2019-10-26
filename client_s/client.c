@@ -98,7 +98,7 @@ void put_file(t_env *e)
 	// write(e->sock, buff, len);
 
 
-	e->error = 1; // debug
+	 // debug
 }
 
 void send_cmd(t_env *e) 
@@ -192,15 +192,16 @@ void go_read_all_buff(t_env *e)
 	while((size_read = read(e->sock, buff, 4095)) > 0)
 	{
 		buff[size_read] = '\0';
-		if (size_read >= 3 && !ft_strncmp(buff, "ntd", 3))
-		{ // ntd = nothing to do
+
+		if (size_read >= 3 && !ft_strncmp(buff, "SUC", 3))
+		{ 
+			printf("%s", buff);
+			if (ft_strstr(buff, "quit")) 
+			{
+				close(e->sock);
+				exit(1);
+			}
 			break ;
-		}
-			
-		if (size_read >= 4 && !ft_strncmp(buff, "quit", 4))
-		{
-			close(e->sock);
-			exit(1);
 		}
 		printf("%s",buff);
 		if (size_read < 4095)

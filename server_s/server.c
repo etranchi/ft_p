@@ -31,7 +31,7 @@ void send_es_to_client(t_env *e)
 	status = e->error ? ft_strdup("ERROR | ") : ft_strdup("SUCCESS | ");
 	to_send = ft_strjoin(status, e->cmd);
 	put_on_client(e, to_send);
-	free(status);
+	// free(status);
 }	
 
 void	error(t_env *e, char *reason)
@@ -89,21 +89,26 @@ void perform_put(t_env *e){
 
 	if (access(name_file, F_OK) != -1)
 		return error(e, "File already exist.\n");
+
+	printf("after access\n");
 	int fd;
 
 	if ((fd = open(name_file, O_RDONLY | O_CREAT | O_WRONLY, mode)) < 0)
 		return error(e, ft_strjoin("Can't create :", name_file));
-	char buff[size_file];
+
+	char buff[4096];
 	int len_read;
-	if ((len_read = read(e->c_sock, buff, size_file)))
+	while ((len_read = read(e->c_sock, buff, 4095)) > 0)
 	{
 		buff[len_read] = 0;
 		write(fd, buff, len_read);
-		printf("je finis d'écrire..\n");
+		if (len_read < 4095)
+			break ;
 	}
+	char *to_send = ft_strjoin("SUCCESS | ", e->cmd);
+	put_on_client(e, to_send);
 
-
-	send_es_to_client(e);
+	
 	// int file;
 	// int all_put = 0;
 	// file = fopen(name_file, "w");
@@ -118,14 +123,16 @@ void perform_put(t_env *e){
 
 void perform_pwd(t_env *e)
 {
-	send_es_to_client(e);
-	put_on_client(e, e->curr_pwd);
+	// send_es_to_client(e);
+	char *to_send = ft_strjoin("SUCCESS | pwd | ", e->curr_pwd);
+	put_on_client(e, to_send);
 }
 
 void perform_quit(t_env *e)
 {
-	send_es_to_client(e);
-	put_on_client(e, e->cmd);
+	// send_es_to_client(e);
+	char *to_send = ft_strdup("SUCCESS | quit");
+	put_on_client(e, to_send);
 }
 
 
@@ -133,22 +140,27 @@ void perform_quit(t_env *e)
 void perform_cd(t_env *e, char **cmd)
 {
 	char *to_send;
+	char *save_pwd;
 
-	to_send = NULL;
 	chdir(cmd[1] ? cmd[1] : ".");
-	e->curr_pwd = getwd(e->curr_pwd);
+	printf("pwd %s, curr_pwd %s\n", e->pwd, e->curr_pwd);
+	save_pwd = e->curr_pwd;
+	e->curr_pwd = getcwd(NULL, 0);
 	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
 	{
-		chdir(e->pwd);
-		e->curr_pwd = e->pwd;
+		printf("pwd %s, curr_pwd %s\n", e->pwd, e->curr_pwd);
 		to_send = ft_strdup("ERROR : You don't have the rights to do this.");
 		put_on_client(e, to_send);
+		chdir(save_pwd);
+		e->curr_pwd = save_pwd;
 	} else {
-		to_send = ft_strjoin("cd to : ", e->curr_pwd);
-		send_es_to_client(e);
+		printf("pwd %s, curr_pwd %s\n", e->pwd, e->curr_pwd);
+		if (!cmd[1])
+			e->curr_pwd = e->pwd;
+		char *to_send = ft_strjoin("SUCCESS | cd | ", e->curr_pwd);
 		put_on_client(e, to_send);
+		chdir(e->curr_pwd);
 	}
-	
 }
 
 void perform_cmd(t_env *e)
@@ -157,27 +169,27 @@ void perform_cmd(t_env *e)
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	printf("strstr %s\n", e->cmd);
-	if (!ft_strncmp(e->cmd, "ls", 2)){
+	if (!ft_strncmp(tab_cmd[0], "ls", 2)){
 		printf("je go ls\n");
 		perform_ls(e);
 	}
-	else if (!ft_strncmp(e->cmd, "cd", 2)){
+	else if (!ft_strncmp(tab_cmd[0], "cd", 2)){
 		printf("je go cd\n");
 		perform_cd(e, tab_cmd);
 	}
-	else if (!ft_strncmp(e->cmd, "get", 3)){
+	else if (!ft_strncmp(tab_cmd[0], "get", 3)){
 		printf("je go get\n");
 		perform_get(e, tab_cmd);
 	}
-	else if (!ft_strncmp(e->cmd, "put", 3)){
+	else if (!ft_strncmp(tab_cmd[0], "put", 3)){
 		printf("je go put\n");
 		perform_put(e);
 	}
-	else if (!ft_strncmp(e->cmd, "pwd", 3)){
+	else if (!ft_strncmp(tab_cmd[0], "pwd", 3)){
 		printf("je go pwd\n");
 		perform_pwd(e);
 	}
-	else if (!ft_strncmp(e->cmd, "quit", 4)){
+	else if (!ft_strncmp(tab_cmd[0], "quit", 4)){
 		printf("je go quit\n");
 		perform_quit(e);
 	}
@@ -192,7 +204,11 @@ void perform_cmd(t_env *e)
 
 void set_pwd(t_env *e)
 {
-	e->pwd = getwd(e->pwd);
+	char *pwd;
+
+	pwd = NULL;
+	pwd = getwd(pwd);
+	e->pwd = ft_strdup(pwd);
 	e->curr_pwd = ft_strdup(e->pwd);
 }
 
@@ -212,17 +228,15 @@ void	perform_ls(t_env *e)
     	cmd = ft_strsplit(e->cmd, ' ');
     	dup2(e->c_sock, 1);
     	dup2(e->c_sock, 2);
-    	close(e->c_sock);
+    	// close(e->c_sock);
     	cmd[0] = ft_strjoin("/bin/", cmd[0]);
     	if (cmd[1] && ft_strstr(cmd[1], "..")) {
     		cmd[1] = NULL;
     	}
     	if (cmd[2])
     		cmd[2] = e->curr_pwd;
-		
     	execv(cmd[0], cmd);
     	close(e->c_sock);
-    	
     }
 	wait4(pid, 0, 0, NULL);
 	
@@ -247,7 +261,7 @@ int		main(int ac, char **av)
 	while((size_line = get_next_line(e->c_sock, &e->cmd)) > 0)
 	{
 		perform_cmd(e);
-		ft_bzero(e->cmd, ft_strlen(e->cmd));
+		free(e->cmd);
 		e->error = 0;
 	}
 	close(e->c_sock);

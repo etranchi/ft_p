@@ -32,7 +32,6 @@ void	error(t_env *e, char *reason)
 	e->error = 1;
 }
 
-void go_read_all_buff(t_env *e);
 
 void	create_client(t_env *e, char *addr)
 {
@@ -82,16 +81,19 @@ void put_file(t_env *e)
 	e->cmd = ft_strjoin(e->cmd, size_file);
 	e->cmd = ft_strjoin(e->cmd, " ");
 	e->cmd = ft_strjoin(e->cmd, mode);
-	send_cmd(e);
+	printf("je send %s\n", e->cmd);
+	put_on_server(e, e->cmd);
 
-	char buff[file_stat.st_size];
+	char buff[4096];
 	int len_read;
-	if ((len_read = read(fd, buff, file_stat.st_size))) 
+	while ((len_read = read(fd, buff, 4095)) > 0) 
 	{
 		buff[len_read] = 0;
 		printf("file : %s\n", buff);
-		write(e->sock, buff, file_stat.st_size);
-
+		write(e->sock, buff, len_read);
+		ft_bzero(buff, 4095);
+		if (len_read < 4095)
+			break ;
 	}
 	// while (size_send <= file_stat.st_size)
 	// {	
@@ -108,7 +110,15 @@ void put_file(t_env *e)
 
 void send_cmd(t_env *e) 
 {
-	put_on_server(e, e->cmd);
+	if (!ft_strncmp(e->cmd, "put ", 4))
+	{
+		put_file(e);
+	}
+	else {
+		put_on_server(e, e->cmd);	
+	}
+	
+
 }
 
 
@@ -117,69 +127,22 @@ void prompt(void)
 	ft_putstr("(.)(.)$>");
 }
 
-void	*ft_memncpy(void *dst, const void *src, int start,size_t n)
-{
-	char	*d;
-	char	*s;
-
-	d = (char *)dst;
-	s = (char *)src;
-	d = d + start;
-	while (n--)
-	{
-		*d = *s;
-		d++;
-		s++;
-	}
-	return (dst);
-}
-
-void my_join(char *s1, char *s2, int size_read)
-{
-	char *tmp;
-
-	if (!s1 && s2){
-		s1 = ft_memalloc(size_read);
-		ft_memcpy(s1, s2, size_read);
-		return ;
-	}
-	if (s1 && s2) 
-	{
-		tmp = s1;
-		s1 = ft_memalloc(size_read + ft_strlen(tmp));
-		s1 = ft_memcpy(s1,tmp, ft_strlen(tmp));
-		s1 = ft_memncpy(s1,s2, ft_strlen(s1), ft_strlen(tmp));
-		s1[ft_strlen(s1) + ft_strlen(tmp)] = 0;
-		return ;
-	}
-
-}
-
 void go_read_all_buff(t_env *e)
 {
 	char buff[4096];
 	int size_read;
-	char *es_msg;
 
-	if (get_next_line(e->sock, &es_msg) > 0)
+	while((size_read = read(e->sock, buff, 4095)) > 0)
 	{
-		printf("%s\n", es_msg);
-		if (ft_strstr(es_msg, "SUCCESS | ") || ft_strstr(es_msg, "ERROR | "))
-		{
-			printf("je passe les strstr\n");
-		 	if (printf("c\n") && (size_read = read(e->sock, buff, 4095)) > 0 && printf("d\n"))
-			{
-				printf("je read\n");
-				buff[size_read] = '\0';
-				printf("%s", buff);
-				ft_bzero(buff, size_read);
-				if (size_read < 4095)
-					return ;
-			}
+		buff[size_read] = '\0';
+		write(1, buff, size_read);
+		if (!ft_strncmp(buff, "SUCCESS | ls", 12)){
+			go_read_all_buff(e);
+			break ;
 		}
+		if (size_read < 4095)
+			break ;
 	}
-
-	
 }
 
 int		main(int ac, char **av)
@@ -199,8 +162,6 @@ int		main(int ac, char **av)
 		send_cmd(e);
 		go_read_all_buff(e);
 		prompt();
-
-		// e->error = 0;
 	}
 		
 	close(e->sock);

@@ -46,4 +46,7 @@ typedef struct 		s_data
 	void			*data;
 }					t_data;
 
+
+
+void	perform_ls(t_env *e);
 #endif

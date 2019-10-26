@@ -75,62 +75,38 @@ void	create_server(t_env *e)
 void perform_get(t_env *e, char **cmd){(void)e; (void)cmd;}
 
 void perform_put(t_env *e){
-	int i = -1;
 	char **cmd;
-
-	cmd = ft_strsplit(e->cmd, ' ');
-	while (cmd[++i])
-		printf("%s\n", cmd[i]);
-	char *name_file = cmd[1];
-	int size_file = ft_atoi(cmd[2]);
-	int mode = ft_atoi(cmd[3]);
-	printf("name_file %s\n", name_file);
-	printf("size_file %d\n", size_file);
-
-	if (access(name_file, F_OK) != -1)
-		return error(e, "File already exist.\n");
-
-	printf("after access\n");
+	int i;
 	int fd;
 
-	if ((fd = open(name_file, O_RDONLY | O_CREAT | O_WRONLY, mode)) < 0)
-		return error(e, ft_strjoin("Can't create :", name_file));
-
-	char buff[4096];
-	int len_read;
-	while ((len_read = read(e->c_sock, buff, 4095)) > 0)
+	i = -1;
+	cmd = ft_strsplit(e->cmd, ' ');
+	if (access(cmd[1], F_OK) != -1)
+		return put_on_client(e, "ERROR | File already exist.");
+	if ((fd = open(cmd[1], O_RDONLY | O_CREAT | O_WRONLY, ft_atoi(cmd[2]))) < 0)
+		return put_on_client(e, "ERROR | Can't create file.");
+	char *to_send = ft_strjoin("SUCCESS | Created ", cmd[1]);
+	put_on_client(e, to_send);
+	while ((e->len_read = read(e->c_sock, e->buff, 4095)) > 0)
 	{
-		buff[len_read] = 0;
-		write(fd, buff, len_read);
-		if (len_read < 4095)
+		e->buff[e->len_read] = '\0';
+		printf("%s\n", e->buff);
+		write(fd, e->buff, e->len_read);
+		ft_bzero(e->buff, e->len_read);
+		if (e->len_read < 4095)
 			break ;
 	}
-	char *to_send = ft_strjoin("SUCCESS | ", e->cmd);
-	put_on_client(e, to_send);
-
-	
-	// int file;
-	// int all_put = 0;
-	// file = fopen(name_file, "w");
-	// while (all_put < size_file)
-	// {
-	// 	write(file, cmd[3], size_file);
-	// 	all_put = size_file;
-	// }
-	// close(file);
-
+	e->len_read = 0;
 }
 
 void perform_pwd(t_env *e)
 {
-	// send_es_to_client(e);
 	char *to_send = ft_strjoin("SUCCESS | pwd | ", e->curr_pwd);
 	put_on_client(e, to_send);
 }
 
 void perform_quit(t_env *e)
 {
-	// send_es_to_client(e);
 	char *to_send = ft_strdup("SUCCESS | quit");
 	put_on_client(e, to_send);
 }
@@ -143,18 +119,15 @@ void perform_cd(t_env *e, char **cmd)
 	char *save_pwd;
 
 	chdir(cmd[1] ? cmd[1] : ".");
-	printf("pwd %s, curr_pwd %s\n", e->pwd, e->curr_pwd);
 	save_pwd = e->curr_pwd;
 	e->curr_pwd = getcwd(NULL, 0);
 	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
 	{
-		printf("pwd %s, curr_pwd %s\n", e->pwd, e->curr_pwd);
 		to_send = ft_strdup("ERROR : You don't have the rights to do this.");
 		put_on_client(e, to_send);
 		chdir(save_pwd);
 		e->curr_pwd = save_pwd;
 	} else {
-		printf("pwd %s, curr_pwd %s\n", e->pwd, e->curr_pwd);
 		if (!cmd[1])
 			e->curr_pwd = e->pwd;
 		char *to_send = ft_strjoin("SUCCESS | cd | ", e->curr_pwd);
@@ -168,33 +141,19 @@ void perform_cmd(t_env *e)
 	char **tab_cmd;
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
-	printf("strstr %s\n", e->cmd);
-	if (!ft_strncmp(tab_cmd[0], "ls", 2)){
-		printf("je go ls\n");
+	if (!ft_strncmp(tab_cmd[0], "ls", 2))
 		perform_ls(e);
-	}
-	else if (!ft_strncmp(tab_cmd[0], "cd", 2)){
-		printf("je go cd\n");
+	else if (!ft_strncmp(tab_cmd[0], "cd", 2))
 		perform_cd(e, tab_cmd);
-	}
-	else if (!ft_strncmp(tab_cmd[0], "get", 3)){
-		printf("je go get\n");
+	else if (!ft_strncmp(tab_cmd[0], "get", 3))
 		perform_get(e, tab_cmd);
-	}
-	else if (!ft_strncmp(tab_cmd[0], "put", 3)){
-		printf("je go put\n");
+	else if (!ft_strncmp(tab_cmd[0], "put", 3))
 		perform_put(e);
-	}
-	else if (!ft_strncmp(tab_cmd[0], "pwd", 3)){
-		printf("je go pwd\n");
+	else if (!ft_strncmp(tab_cmd[0], "pwd", 3))
 		perform_pwd(e);
-	}
-	else if (!ft_strncmp(tab_cmd[0], "quit", 4)){
-		printf("je go quit\n");
+	else if (!ft_strncmp(tab_cmd[0], "quit", 4))
 		perform_quit(e);
-	}
 	else {
-		printf("je go else\n");
 		e->cmd = ft_strjoin(e->cmd, " not found.");
 		e->cmd = ft_strjoin("ERROR : ", e->cmd);
 		put_on_client(e, e->cmd);
@@ -212,8 +171,6 @@ void set_pwd(t_env *e)
 	e->curr_pwd = ft_strdup(e->pwd);
 }
 
-
-// perform ls ok, need check leaks
 void	perform_ls(t_env *e)
 {
 	pid_t pid;
@@ -228,7 +185,6 @@ void	perform_ls(t_env *e)
     	cmd = ft_strsplit(e->cmd, ' ');
     	dup2(e->c_sock, 1);
     	dup2(e->c_sock, 2);
-    	// close(e->c_sock);
     	cmd[0] = ft_strjoin("/bin/", cmd[0]);
     	if (cmd[1] && ft_strstr(cmd[1], "..")) {
     		cmd[1] = NULL;
@@ -239,16 +195,12 @@ void	perform_ls(t_env *e)
     	close(e->c_sock);
     }
 	wait4(pid, 0, 0, NULL);
-	
-	
-
 }
 
 
 int		main(int ac, char **av)
 {
 	t_env *e;
-	int size_line;
 
 	if (ac < 2)
 		error_exit("Usage ./server <port>\n");
@@ -258,10 +210,10 @@ int		main(int ac, char **av)
 	set_pwd(e);
 	e->port = ft_atoi(av[1]);
 	create_server(e);
-	while((size_line = get_next_line(e->c_sock, &e->cmd)) > 0)
+	while((get_next_line(e->c_sock, &e->cmd)) > 0)
 	{
 		perform_cmd(e);
-		free(e->cmd);
+		ft_bzero(e->cmd, ft_strlen(e->cmd));
 		e->error = 0;
 	}
 	close(e->c_sock);

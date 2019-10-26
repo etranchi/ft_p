@@ -36,6 +36,8 @@ typedef struct		s_env
 	char			*cmd;
 	char			*res;
 	int				error;
+	char			buff[4096];
+	int				len_read;
 }					t_env;
 
 

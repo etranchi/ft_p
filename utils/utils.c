@@ -14,7 +14,21 @@
 
 void	merge_data(t_data *data, char *buff, int len_read)
 {
-	data->data = ft_strjoin(data->data, buff);
+	char *tmp;
+
+	tmp = NULL;
+	if(!data->data)
+	{
+		data->data = ft_memalloc(len_read);
+		ft_memcpy((void*)data->data, buff, len_read);
+	}
+	else
+	{
+		tmp = data->data;
+		data->data = ft_memalloc(data->size + len_read + 1);
+		ft_memcpy((void*)data->data, tmp, data->size);
+		ft_memcpy((void*)&data->data[data->size], buff, len_read);
+	}
 	data->size += len_read;
 }
 

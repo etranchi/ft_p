@@ -24,6 +24,7 @@
 # define ERROR -1
 # define SUCCESS 1
 # define STDOUT 1
+# define BUFFSIZE 4095
 # define CMDS (char*[]){ "ls", "cd", "get", "put", "pwd", "quit", NULL}
 
 typedef struct		s_env
@@ -36,19 +37,21 @@ typedef struct		s_env
 	char			*cmd;
 	char			*res;
 	int				error;
-	char			buff[4096];
+	char			buff[BUFFSIZE + 1];
 	int				len_read;
 }					t_env;
 
-
-typedef struct 		s_data 
+typedef struct		s_data
 {
 	int				size;
-	char 			*cmd;
+	char			*cmd;
 	void			*data;
 }					t_data;
 
-
-
-void	perform_ls(t_env *e);
+void				read_fd_write_fd(t_env *e, int fd_read, int fd_write);
+void				go_read_all_buff(t_env *e);
+void				perform_ls(t_env *e);
+void				send_cmd(t_env *e);
+void				error_exit(char *reason);
+void				put_msg_on_fd(int fd, char *msg);
 #endif

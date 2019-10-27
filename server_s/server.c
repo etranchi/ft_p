@@ -12,53 +12,17 @@
 
 #include "../include/ft_p.h"
 
-
-void put_on_client(t_env *e, char *msg)
-{
-	char *to_send;
-
-	to_send = ft_strjoin(msg, "\n");
-	write(e->c_sock, to_send, ft_strlen(to_send));
-// 	free(msg);
-//	free(to_send);
-}
-
-void send_es_to_client(t_env *e)
-{
-	char *to_send;
-	char *status;
-
-	status = e->error ? ft_strdup("ERROR | ") : ft_strdup("SUCCESS | ");
-	to_send = ft_strjoin(status, e->cmd);
-	put_on_client(e, to_send);
-	// free(status);
-}	
-
-void	error(t_env *e, char *reason)
-{
-	ft_putstr("ERROR : ");
-	ft_putstr(reason);
-	e->error = 1;
-}
-
-void	error_exit(char *reason)
-{
-	ft_putstr("ERROR : ");
-	ft_putstr(reason);
-	exit(1);
-}
-
-void	create_server(t_env *e)
+void					create_server(t_env *e)
 {
 	struct protoent		*proto;
 	struct sockaddr_in	sin;
-	unsigned int 		cslen;
-	struct sockaddr_in csin;
+	unsigned int		cslen;
+	struct sockaddr_in	csin;
 
 	proto = getprotobyname("tcp");
 	if (proto == 0)
 		error_exit("Proto.\n");
-	e->sock = socket(PF_INET, SOCK_STREAM,	proto->p_proto);
+	e->sock = socket(PF_INET, SOCK_STREAM, proto->p_proto);
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(e->port);
 	sin.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -70,100 +34,122 @@ void	create_server(t_env *e)
 		error_exit("Accept.\n");
 }
 
+void					perform_get(t_env *e)
+{
+	int					fd;
+	char				**tab_cmd;
+	struct stat			file_stat;
 
+	tab_cmd = ft_strsplit(e->cmd, ' ');
+	if (!tab_cmd[1])
+		return (put_msg_on_fd(e->c_sock, "ERROR | No file to put."));
+	if ((fd = open(tab_cmd[1], O_RDONLY)) < 0)
+		return (put_msg_on_fd(e->c_sock, ft_strjoin("ERROR | Can't open :", tab_cmd[1])));
+	if (fd == -1)
+		return (put_msg_on_fd(e->c_sock, "ERROR | File doesn't exist."));
+	if (fstat(fd, &file_stat) < 0)
+		return (put_msg_on_fd(e->c_sock, "ERROR | Fstat.\n"));
+	if (!S_ISREG(file_stat.st_mode))
+		return (put_msg_on_fd(e->c_sock, "ERROR | It's not a file."));
+	e->cmd = ft_strjoin(e->cmd, " ");
+	e->cmd = ft_strjoin(e->cmd, ft_itoa(file_stat.st_mode));
+	put_msg_on_fd(e->c_sock, e->cmd);
+	read_fd_write_fd(e, fd, e->c_sock);
+}
 
-void perform_get(t_env *e, char **cmd){(void)e; (void)cmd;}
-
-void perform_put(t_env *e){
-	char **cmd;
-	int i;
-	int fd;
+void					perform_put(t_env *e)
+{
+	char				**cmd;
+	int					i;
+	int					fd;
 
 	i = -1;
 	cmd = ft_strsplit(e->cmd, ' ');
+	if (!cmd[1])
+		return (put_msg_on_fd(e->c_sock, "ERROR | No file to put."));
 	if (access(cmd[1], F_OK) != -1)
-		return put_on_client(e, "ERROR | File already exist.");
+		return (put_msg_on_fd(e->c_sock, "ERROR | File already exist."));
 	if ((fd = open(cmd[1], O_RDONLY | O_CREAT | O_WRONLY, ft_atoi(cmd[2]))) < 0)
-		return put_on_client(e, "ERROR | Can't create file.");
-	char *to_send = ft_strjoin("SUCCESS | Created ", cmd[1]);
-	put_on_client(e, to_send);
-	while ((e->len_read = read(e->c_sock, e->buff, 4095)) > 0)
-	{
-		e->buff[e->len_read] = '\0';
-		printf("%s\n", e->buff);
-		write(fd, e->buff, e->len_read);
-		ft_bzero(e->buff, e->len_read);
-		if (e->len_read < 4095)
-			break ;
-	}
+		return (put_msg_on_fd(e->c_sock, "ERROR | Can't create file."));
+	e->cmd = ft_strjoin("SUCCESS | Created ", cmd[1]);
+	put_msg_on_fd(e->c_sock, e->cmd);
+	read_fd_write_fd(e, e->c_sock, fd);
 	e->len_read = 0;
 }
 
-void perform_pwd(t_env *e)
+void					perform_pwd(t_env *e)
 {
-	char *to_send = ft_strjoin("SUCCESS | pwd | ", e->curr_pwd);
-	put_on_client(e, to_send);
+	char				*to_send;
+
+	to_send = ft_strjoin("SUCCESS | pwd | ", e->curr_pwd);
+	put_msg_on_fd(e->c_sock, to_send);
 }
 
-void perform_quit(t_env *e)
+void					perform_quit(t_env *e)
 {
-	char *to_send = ft_strdup("SUCCESS | quit");
-	put_on_client(e, to_send);
+	char				*to_send;
+
+	to_send = ft_strdup("SUCCESS | quit");
+	put_msg_on_fd(e->c_sock, to_send);
 }
 
-
-
-void perform_cd(t_env *e, char **cmd)
+void					perform_cd(t_env *e, char **cmd)
 {
-	char *to_send;
-	char *save_pwd;
+	char				*to_send;
+	char				*save_pwd;
 
-	chdir(cmd[1] ? cmd[1] : ".");
+	if (chdir(cmd[1] ? cmd[1] : ".") == -1)
+	{
+		to_send = ft_strjoin("ERROR | ", e->cmd);
+		return (put_msg_on_fd(e->c_sock, to_send));
+	}
 	save_pwd = e->curr_pwd;
 	e->curr_pwd = getcwd(NULL, 0);
 	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
 	{
 		to_send = ft_strdup("ERROR : You don't have the rights to do this.");
-		put_on_client(e, to_send);
+		put_msg_on_fd(e->c_sock, to_send);
 		chdir(save_pwd);
 		e->curr_pwd = save_pwd;
-	} else {
+	}
+	else
+	{
 		if (!cmd[1])
 			e->curr_pwd = e->pwd;
-		char *to_send = ft_strjoin("SUCCESS | cd | ", e->curr_pwd);
-		put_on_client(e, to_send);
+		to_send = ft_strjoin("SUCCESS | cd | ", e->curr_pwd);
+		put_msg_on_fd(e->c_sock, to_send);
 		chdir(e->curr_pwd);
 	}
 }
 
-void perform_cmd(t_env *e)
+void					perform_cmd(t_env *e)
 {
-	char **tab_cmd;
+	char				**tab_cmd;
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
-	if (!ft_strncmp(tab_cmd[0], "ls", 2))
+	if (!ft_strncmp(tab_cmd[0], "ls", 3))
 		perform_ls(e);
-	else if (!ft_strncmp(tab_cmd[0], "cd", 2))
+	else if (!ft_strncmp(tab_cmd[0], "cd", 3))
 		perform_cd(e, tab_cmd);
-	else if (!ft_strncmp(tab_cmd[0], "get", 3))
-		perform_get(e, tab_cmd);
-	else if (!ft_strncmp(tab_cmd[0], "put", 3))
+	else if (!ft_strncmp(tab_cmd[0], "get", 4))
+		perform_get(e);
+	else if (!ft_strncmp(tab_cmd[0], "put", 4))
 		perform_put(e);
-	else if (!ft_strncmp(tab_cmd[0], "pwd", 3))
+	else if (!ft_strncmp(tab_cmd[0], "pwd", 4))
 		perform_pwd(e);
-	else if (!ft_strncmp(tab_cmd[0], "quit", 4))
+	else if (!ft_strncmp(tab_cmd[0], "quit", 5))
 		perform_quit(e);
-	else {
+	else
+	{
 		e->cmd = ft_strjoin(e->cmd, " not found.");
 		e->cmd = ft_strjoin("ERROR : ", e->cmd);
-		put_on_client(e, e->cmd);
+		put_msg_on_fd(e->c_sock, e->cmd);
 	}
 }
 
-
-void set_pwd(t_env *e)
+void					set_pwd(t_env *e)
 {
-	char *pwd;
+	char				*pwd;
 
 	pwd = NULL;
 	pwd = getwd(pwd);
@@ -171,36 +157,58 @@ void set_pwd(t_env *e)
 	e->curr_pwd = ft_strdup(e->pwd);
 }
 
-void	perform_ls(t_env *e)
+char					*check_ls_cmd(char *cmd)
 {
-	pid_t pid;
-	char **cmd;
+	int					i;
+	int					j;
+	char				*buff;
 
- 	pid = fork();
+	if (!cmd)
+		return (NULL);
+	if (!(buff = malloc(sizeof(char) * ft_strlen(cmd))))
+		error_exit("Malloc.\n");
+	i = -1;
+	j = -1;
+	while (cmd[++i])
+		if (ft_isdigit(cmd[i]))
+			continue ;
+		else
+			buff[++j] = cmd[i];
+	buff[++j] = '\0';
+	return (buff);
+}
+
+void					perform_ls(t_env *e)
+{
+	pid_t				pid;
+	char				**cmd;
+	char				*to_send;
+
+	pid = fork();
 	if (pid == -1)
-    	error_exit("Fork.\n");
-    if (pid == 0)
-    {
-    	send_es_to_client(e);
-    	cmd = ft_strsplit(e->cmd, ' ');
-    	dup2(e->c_sock, 1);
-    	dup2(e->c_sock, 2);
-    	cmd[0] = ft_strjoin("/bin/", cmd[0]);
-    	if (cmd[1] && ft_strstr(cmd[1], "..")) {
-    		cmd[1] = NULL;
-    	}
-    	if (cmd[2])
-    		cmd[2] = e->curr_pwd;
-    	execv(cmd[0], cmd);
-    	close(e->c_sock);
-    }
+		error_exit("Fork.\n");
+	if (pid == 0)
+	{
+		to_send = ft_strdup("SUCCESS | ls");
+		put_msg_on_fd(e->c_sock, to_send);
+		cmd = ft_strsplit(e->cmd, ' ');
+		dup2(e->c_sock, 1);
+		dup2(e->c_sock, 2);
+		cmd[0] = ft_strjoin("/bin/", cmd[0]);
+		if (cmd[1] && cmd[1][0] != '-')
+			cmd[1] = NULL;
+		cmd[1] = check_ls_cmd(cmd[1]);
+		if (cmd[2])
+			cmd[2] = NULL;
+		execv(cmd[0], cmd);
+		close(e->c_sock);
+	}
 	wait4(pid, 0, 0, NULL);
 }
 
-
-int		main(int ac, char **av)
+int						main(int ac, char **av)
 {
-	t_env *e;
+	t_env				*e;
 
 	if (ac < 2)
 		error_exit("Usage ./server <port>\n");
@@ -210,9 +218,10 @@ int		main(int ac, char **av)
 	set_pwd(e);
 	e->port = ft_atoi(av[1]);
 	create_server(e);
-	while((get_next_line(e->c_sock, &e->cmd)) > 0)
+	while ((get_next_line(e->c_sock, &e->cmd)) > 0)
 	{
-		perform_cmd(e);
+		if (ft_strlen(e->cmd) > 0)
+			perform_cmd(e);
 		ft_bzero(e->cmd, ft_strlen(e->cmd));
 		e->error = 0;
 	}

@@ -26,6 +26,7 @@
 # define STDOUT 1
 # define BUFFSIZE 4095
 # define CMDS (char*[]){ "ls", "cd", "get", "put", "pwd", "quit", NULL}
+# define MIN(a,b) a < b ? a : b
 
 typedef struct		s_env
 {
@@ -44,8 +45,7 @@ typedef struct		s_env
 typedef struct		s_data
 {
 	int				size;
-	char			*cmd;
-	void			*data;
+	char			*data;
 }					t_data;
 
 void				read_fd_write_fd(t_env *e, int fd_read, int fd_write);
@@ -54,4 +54,6 @@ void				perform_ls(t_env *e);
 void				send_cmd(t_env *e);
 void				error_exit(char *reason);
 void				put_msg_on_fd(int fd, char *msg);
+t_data				*read_fd(t_env *e, int fd);
+void				merge_data(t_data *data, char *buff, int len_read);
 #endif

@@ -12,16 +12,48 @@
 
 #include "../include/ft_p.h"
 
+void	merge_data(t_data *data, char *buff, int len_read)
+{
+	data->data = ft_strjoin(data->data, buff);
+	data->size += len_read;
+}
+
 void	read_fd_write_fd(t_env *e, int fd_read, int fd_write)
 {
+	t_data *data;
+
+	data = (t_data *)malloc(sizeof(t_data));
+	ft_memset(data, 0, sizeof(t_data));
 	while ((e->len_read = read(fd_read, e->buff, BUFFSIZE)) > 0)
 	{
+
 		e->buff[e->len_read] = 0;
-		write(fd_write, e->buff, e->len_read);
+		merge_data(data, e->buff, e->len_read);
 		ft_bzero(e->buff, e->len_read);
 		if (e->len_read < BUFFSIZE)
+		{
+			write(fd_write, data->data, data->size);
 			break ;
+		}
+			
 	}
+}
+
+t_data	*read_fd(t_env *e, int fd)
+{
+	t_data *data;
+
+	data = (t_data *)malloc(sizeof(t_data));
+	ft_memset(data, 0, sizeof(t_data));
+	while ((e->len_read = read(fd, e->buff, BUFFSIZE)))
+	{
+		e->buff[e->len_read] = '\0';
+		merge_data(data, e->buff, e->len_read);
+		if (e->len_read < BUFFSIZE)
+			return data;
+		
+	}
+	return data;
 }
 
 void	error_exit(char *reason)

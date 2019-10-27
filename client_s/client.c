@@ -68,6 +68,7 @@ void						get_file(t_env *e)
 	char					**tab_cmd;
 	char					**file_info;
 	int						fd;
+	t_data					*data;
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (!tab_cmd[1])
@@ -75,14 +76,9 @@ void						get_file(t_env *e)
 	if (access(tab_cmd[1], F_OK) != -1)
 		return (error(e, "File already exist."));
 	put_msg_on_fd(e->sock, e->cmd);
-	while ((e->len_read = read(e->sock, e->buff, 4095)))
-	{
-		e->buff[e->len_read] = '\0';
-		if (e->len_read < 4095)
-			break ;
-	}
-	file_info = ft_strsplit(e->buff, ' ');
-	if (!ft_strncmp(file_info[0], "ERROR ", e->len_read > 6 ? 6 : e->len_read))
+	data = read_fd(e, e->sock);
+	file_info = ft_strsplit(data->data, ' ');
+	if (!ft_strncmp(file_info[0], "ERROR ", MIN(data->size, 6)))
 		return (error(e, file_info[0]));
 	if ((fd = open(file_info[1], O_RDONLY | O_CREAT | O_WRONLY,
 		ft_atoi(file_info[2]))) < 0)
@@ -112,19 +108,17 @@ void						prompt(void)
 
 void						go_read_all_buff(t_env *e)
 {
-	while ((e->len_read = read(e->sock, e->buff, 4095)) > 0)
-	{
-		e->buff[e->len_read] = '\0';
-		write(1, e->buff, e->len_read);
-		if (!ft_strncmp(e->buff, "ERROR ", 6) && (e->error = 1))
-			return ;
-		if (!ft_strncmp(e->buff, "SUCCESS | ls", 12) ||
-			!ft_strncmp(e->buff, "/bin/ls: illegal", 16))
-			return (go_read_all_buff(e));
-		ft_bzero(e->buff, e->len_read);
-		if (e->len_read < 4095)
-			break ;
-	}
+	t_data *data;
+
+	data = read_fd(e, e->sock);
+	// printf("data ::: : : :: %s\n", data->data);
+	write(1, data->data, data->size);
+	// make other function for those case
+	if (!ft_strncmp(data->data, "ERROR ", MIN(6, data->size)) && (e->error = 1))
+		return ;
+	if (!ft_strncmp(data->data, "SUCCESS | ls", MIN(12, data->size)) ||
+		!ft_strncmp(data->data, "/bin/ls: illegal", MIN(16, data->size)))
+		return (go_read_all_buff(e));
 	e->len_read = 0;
 }
 

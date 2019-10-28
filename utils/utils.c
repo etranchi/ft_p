@@ -20,7 +20,6 @@ void	check_data(t_env *e, t_data *data, int fd)
 		{
 			if (fd != -1)
 				write(fd, data->data, data->size);
-			printf("check_data %p\n", data);
 			free_data(data);
 			e->error = 1;
 		}
@@ -59,7 +58,6 @@ void	read_fd_write_fd(t_env *e, int fd_read, int fd_write)
 	{
 		e->buff[e->len_read] = 0;
 		merge_data(data, e->buff, e->len_read);
-		printf("data : %s\n", data->data);
 		ft_bzero(e->buff, e->len_read);
 		if (e->len_read < BUFFSIZE)
 		{
@@ -79,7 +77,6 @@ t_data	*read_fd(t_env *e, int fd)
 	ft_memset(data, 0, sizeof(t_data));
 	while ((e->len_read = read(fd, e->buff, BUFFSIZE)) > 0)
 	{	
-		printf("e->buff : %s\n", e->buff);
 		e->buff[e->len_read] = '\0';
 		merge_data(data, e->buff, e->len_read);
 		ft_bzero(e->buff, e->len_read);

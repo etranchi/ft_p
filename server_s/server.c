@@ -127,15 +127,10 @@ void					perform_cd(t_env *e, char **cmd)
 void					perform_cmd(t_env *e)
 {
 	char				**tab_cmd;
-	// char				*to_send;
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
-	printf("cmd :%s|end\n", e->cmd);
 	if (!ft_strncmp(tab_cmd[0], "ls", 2))
-	{
-
 		perform_ls(e);
-	}
 	else if (!ft_strncmp(tab_cmd[0], "cd", 2))
 		perform_cd(e, tab_cmd);
 	else if (!ft_strncmp(tab_cmd[0], "get", 3))
@@ -206,6 +201,7 @@ void					perform_ls(t_env *e)
 			cmd[2] = "";
 		execv(to_send, cmd);
 		close(e->c_sock);
+		free(to_send);
 		free_tab(cmd);
 	}
 	wait4(pid, 0, 0, NULL);

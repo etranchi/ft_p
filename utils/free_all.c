@@ -20,11 +20,7 @@ void	free_tab(char **tab)
 	if (tab)
 	{
 		while (tab[++i])
-		{
-			printf("free_tab tab[i] : %p\n", tab[i]);
 			free(tab[i]);
-		}
-		printf("free tab : %p\n", tab);
 		free(tab);
 	}
 }
@@ -35,7 +31,6 @@ void	free_data(t_data *data)
 	{
 		if (data->data && data->size > 0)
 		{
-			printf("free_data data->data : %p\n", data->data);
 			free(data->data);
 			data->data = NULL;
 			free(data);

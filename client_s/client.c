@@ -154,6 +154,8 @@ void						send_cmd(t_env *e)
 		put_msg_on_fd(e->sock, to_send, 1);
 		data = read_fd(e, e->sock);
 		check_data(e, data, STDOUT);
+		data->data[data->size - 1] = '\0';
+		put_msg_on_fd(STDOUT, data->data, 0);
 		if (!e->error)
 			free_data(data);
 	}

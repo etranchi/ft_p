@@ -53,7 +53,10 @@ void				go_read_all_buff(t_env *e);
 void				perform_ls(t_env *e);
 void				send_cmd(t_env *e);
 void				error_exit(char *reason);
-void				put_msg_on_fd(int fd, char *msg);
+void				put_msg_on_fd(int fd, char *msg, int free_msg);
 t_data				*read_fd(t_env *e, int fd);
 void				merge_data(t_data *data, char *buff, int len_read);
+void				check_data(t_env *e, t_data *data, int fd);
+void				free_tab(char **tab);
+void				free_data(t_data *data);
 #endif

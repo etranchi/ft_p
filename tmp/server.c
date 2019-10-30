@@ -63,6 +63,9 @@ void					perform_get(t_env *e)
 	read_fd_write_fd(e, fd, e->c_sock);
 }
 
+
+
+// PAS TOUCHE PUT
 void					perform_put(t_env *e)
 {
 	char				**tab_cmd;
@@ -99,7 +102,7 @@ void					perform_cd(t_env *e)
 {
 	char				*to_send;
 	char				**tab_cmd;
-	char				*tmp_pwd;
+	char 				*tmp_pwd;
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (chdir(tab_cmd[1] ? tab_cmd[1] : ".") == -1)
@@ -123,7 +126,7 @@ void					perform_cd(t_env *e)
 			e->curr_pwd = ft_strdup(e->pwd);
 		else
 			e->curr_pwd = ft_strdup(tmp_pwd);
-		to_send = ft_strjoin_free("SUCCESS | cd | ", e->curr_pwd, 0, 0);
+		to_send = ft_strjoin_free("SUCCESS | cd | ", e->curr_pwd, 0 , 0);
 		put_msg_on_fd(e->c_sock, to_send, 1);
 		chdir(e->curr_pwd);
 	}
@@ -189,6 +192,7 @@ void					perform_ls(t_env *e)
 	char				**cmd;
 	char				*to_send;
 
+	
 	pid = fork();
 	if (pid == -1)
 		error_exit("Fork.\n");

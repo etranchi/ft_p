@@ -58,9 +58,11 @@ void				put_msg_on_fd(int fd, char *msg, int free_msg);
 t_data				*read_fd(t_env *e, int fd);
 void				merge_data(t_data *data, char *buff, int len_read);
 void				write_data_on_fd(t_env *e, t_data *data, int fd_write);
-void				free_tab(char **tab);
+int					free_tab(char **tab);
 void				free_data(t_data *data);
 void				clean_data(char *data);
 int					get_status_fd(int fd, int out_fd);
+char				*ft_strjoin_free(char const *s1,
+	char const *s2, int f1, int f2);
 
 #endif

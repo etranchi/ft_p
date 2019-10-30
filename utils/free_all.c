@@ -12,7 +12,7 @@
 
 #include "../include/ft_p.h"
 
-void	free_tab(char **tab)
+int		free_tab(char **tab)
 {
 	int i;
 
@@ -23,6 +23,7 @@ void	free_tab(char **tab)
 			free(tab[i]);
 		free(tab);
 	}
+	return (1);
 }
 
 void	free_data(t_data *data)

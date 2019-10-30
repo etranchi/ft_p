@@ -37,15 +37,12 @@ void						create_client(t_env *e, char *addr)
 		error_exit("Connect.\n");
 }
 
-
-// PAS TOUCHE PUT
 void						put_file(t_env *e)
 {
 	int						fd;
 	char					**tab_cmd;
 	struct stat				file_stat;
 	char					*to_send;
-
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (!tab_cmd[1])
@@ -58,7 +55,7 @@ void						put_file(t_env *e)
 		return (error(e, "It's not a file.", tab_cmd));
 	free_tab(tab_cmd);
 	to_send = ft_strjoin(e->cmd, " ");
-	to_send = ft_strjoin(to_send, ft_itoa(file_stat.st_mode));
+	to_send = ft_strjoin_free(to_send, ft_itoa(file_stat.st_mode), 1, 1);
 	put_msg_on_fd(e->sock, to_send, 1);
 	if (!get_status_fd(e->sock, STDOUT))
 		return ;
@@ -76,16 +73,16 @@ void						get_file(t_env *e)
 	if (!tab_cmd[1])
 		return (error(e, "No file to get.", tab_cmd));
 	if (access(tab_cmd[1], F_OK) != -1)
-		return (error(e, "File already exist.",tab_cmd));
+		return (error(e, "File already exist.", tab_cmd));
 	put_msg_on_fd(e->sock, e->cmd, 0);
 	free_tab(tab_cmd);
 	if (!get_status_fd(e->sock, STDOUT))
 		return ;
-	data = read_fd(e, e->sock);
-	if (!data)
+	if ((data = read_fd(e, e->sock)) == NULL)
 		return ;
 	file_info = ft_strsplit(data->data, ' ');
-	if ((fd = open(file_info[1], O_RDONLY | O_CREAT | O_WRONLY, ft_atoi(file_info[2]))) < 0)
+	if ((fd = open(file_info[1], O_RDONLY | O_CREAT | O_WRONLY,
+		ft_atoi(file_info[2]))) < 0)
 		return (error(e, "Can't create file.", file_info));
 	put_msg_on_fd(e->sock, "SUCCESS", 0);
 	read_fd_write_fd(e, e->sock, fd);
@@ -93,8 +90,6 @@ void						get_file(t_env *e)
 	free_tab(file_info);
 	free_data(data);
 }
-
-
 
 void						get_ls(t_env *e)
 {
@@ -106,28 +101,27 @@ void						get_ls(t_env *e)
 	read_fd_write_fd(e, e->sock, STDOUT);
 }
 
-
 int							check_cmd(t_env *e)
 {
-	int i;
-	size_t cmd_len;
-	size_t CMDS_LEN;
+	int						i;
+	size_t					cmd_len;
+	size_t					cmds_len;
 
 	i = -1;
 	while (CMDS[++i] && e->cmd)
 	{
 		cmd_len = ft_strlen(e->cmd);
-		CMDS_LEN = ft_strlen(CMDS[i]);
-		if (!ft_strncmp(CMDS[i], e->cmd, CMDS_LEN))
+		cmds_len = ft_strlen(CMDS[i]);
+		if (!ft_strncmp(CMDS[i], e->cmd, cmds_len))
 		{
-			if ((cmd_len == CMDS_LEN) | (cmd_len > CMDS_LEN && e->cmd[CMDS_LEN] == ' '))
+			if ((cmd_len == cmds_len) ||
+				(cmd_len > cmds_len && e->cmd[cmds_len] == ' '))
 				return (1);
 		}
 	}
 	ft_putstr("ERROR | wrong command.\n");
 	return (0);
 }
-
 
 void						get_cd(t_env *e)
 {
@@ -148,16 +142,16 @@ void						send_cmd(t_env *e)
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (!ft_strcmp(tab_cmd[0], "put"))
-	 	put_file(e);
+		put_file(e);
 	if (!ft_strcmp(tab_cmd[0], "get"))
 		get_file(e);
 	else if (!ft_strcmp(tab_cmd[0], "ls"))
-	 	get_ls(e);
+		get_ls(e);
 	else if (!ft_strcmp(tab_cmd[0], "cd"))
-	 	get_cd(e);
+		get_cd(e);
 	else if (!ft_strcmp(tab_cmd[0], "pwd"))
-	 	get_pwd(e);
-	 free_tab(tab_cmd);
+		get_pwd(e);
+	free_tab(tab_cmd);
 }
 
 void						prompt(void)
@@ -181,13 +175,11 @@ int							main(int ac, char **av)
 	{
 		if (ft_strlen(e->cmd) > 0 && check_cmd(e))
 		{
-			printf("e->cmd : %s0\n", e->cmd);
 			send_cmd(e);
 			e->error = 0;
 		}
 		free(e->cmd);
 		prompt();
-		
 	}
 	close(e->sock);
 	return (0);

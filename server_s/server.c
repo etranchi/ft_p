@@ -43,7 +43,7 @@ void					perform_get(t_env *e)
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (!tab_cmd[1])
-		return (put_msg_on_fd(e->c_sock, "ERROR | No file to put.", 0));
+		return (put_msg_on_fd(e->c_sock, "ERROR | No file to get.", 0));
 	if ((fd = open(tab_cmd[1], O_RDONLY)) < 0)
 		return (put_msg_on_fd(e->c_sock, "ERROR | Can't open file.", 0));
 	if (fd == -1)
@@ -52,20 +52,27 @@ void					perform_get(t_env *e)
 		return (put_msg_on_fd(e->c_sock, "ERROR | Fstat.", 0));
 	if (!S_ISREG(file_stat.st_mode))
 		return (put_msg_on_fd(e->c_sock, "ERROR | It's not a file.", 0));
+	free_tab(tab_cmd);
+	put_msg_on_fd(e->c_sock, "SUCCESS", 0);
 	to_send = ft_strjoin(e->cmd, " ");
 	to_send = ft_strjoin(to_send, ft_itoa(file_stat.st_mode));
+	nanosleep((const struct timespec[]){{0, 5000000L}}, NULL);
 	put_msg_on_fd(e->c_sock, to_send, 1);
+	
+	if (!get_status_fd(e->c_sock, -1))
+		return ;
 	read_fd_write_fd(e, fd, e->c_sock);
 }
 
+
+
+// PAS TOUCHE PUT
 void					perform_put(t_env *e)
 {
 	char				**tab_cmd;
-	int					i;
 	int					fd;
 	char				*to_send;
 
-	i = -1;
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (!tab_cmd[1])
 		return (put_msg_on_fd(e->c_sock, "ERROR | No file to put.", 0));
@@ -74,25 +81,22 @@ void					perform_put(t_env *e)
 	if ((fd = open(tab_cmd[1], O_RDONLY | O_CREAT | O_WRONLY, ft_atoi(tab_cmd[2]))) < 0)
 		return (put_msg_on_fd(e->c_sock, "ERROR | Can't create file.", 0));
 	to_send = ft_strjoin("SUCCESS | Created ", tab_cmd[1]);
+	free_tab(tab_cmd);
 	put_msg_on_fd(e->c_sock, to_send, 1);
+	nanosleep((const struct timespec[]){{0, 5000000L}}, NULL);
 	read_fd_write_fd(e, e->c_sock, fd);
-	e->len_read = 0;
 }
 
 void					perform_pwd(t_env *e)
 {
-	char				*to_send;
-
-	to_send = ft_strjoin("SUCCESS | pwd | ", e->curr_pwd);
-	put_msg_on_fd(e->c_sock, to_send, 1);
+	put_msg_on_fd(e->c_sock, "SUCCESS | pwd", 0);
+	nanosleep((const struct timespec[]){{0, 5000000L}}, NULL);
+	put_msg_on_fd(e->c_sock, e->curr_pwd, 0);
 }
 
 void					perform_quit(t_env *e)
 {
-	char				*to_send;
-
-	to_send = ft_strdup("SUCCESS | quit");
-	put_msg_on_fd(e->c_sock, to_send, 1);
+	put_msg_on_fd(e->c_sock, "SUCCESS | quit", 0);
 }
 
 void					perform_cd(t_env *e, char **cmd)
@@ -106,7 +110,7 @@ void					perform_cd(t_env *e, char **cmd)
 		return (put_msg_on_fd(e->c_sock, to_send, 1));
 	}
 	save_pwd = e->curr_pwd;
-	e->curr_pwd = getwd(e->curr_pwd);
+	e->curr_pwd = getcwd(NULL, 0);
 	if (ft_strlen(e->curr_pwd) < ft_strlen(e->pwd))
 	{
 		to_send = ft_strdup("ERROR : You don't have the rights to do this.");
@@ -141,8 +145,7 @@ void					perform_cmd(t_env *e)
 		perform_pwd(e);
 	else if (!ft_strncmp(tab_cmd[0], "quit", 4))
 		perform_quit(e);
-	else if (!ft_strncmp(tab_cmd[0], "ERROR :", 7))
-		return ;
+	free_tab(tab_cmd);
 }
 
 void					set_pwd(t_env *e)
@@ -207,26 +210,6 @@ void					perform_ls(t_env *e)
 	wait4(pid, 0, 0, NULL);
 }
 
-char					*clean_data(char *data)
-{
-	char				*to_ret;
-	int					i;
-
-	if (!(to_ret = malloc(sizeof(char) * (ft_strlen(data) + 1))))
-		error_exit("Malloc.\n");
-	to_ret[ft_strlen(data)] = '\0';
-	i = -1;
-	while (data[++i])
-	{
-		if (data[i] == '\n')
-			to_ret[i] = ' ';
-		else
-			to_ret[i] = data[i];
-	}
-	free(data);
-	return (to_ret);
-}
-
 int						main(int ac, char **av)
 {
 	t_env				*e;
@@ -241,10 +224,14 @@ int						main(int ac, char **av)
 	create_server(e);
 	while ((get_next_line(e->c_sock, &e->cmd)) > 0)
 	{
-		e->cmd = clean_data(e->cmd);
+		
+		printf("received cmd : %s0\n", e->cmd);
 		if (ft_strlen(e->cmd) > 0)
+		{
 			perform_cmd(e);
-		e->error = 0;
+			e->error = 0;
+		}
+		free(e->cmd);
 	}
 	close(e->c_sock);
 	close(e->sock);

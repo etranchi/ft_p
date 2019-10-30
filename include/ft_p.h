@@ -20,6 +20,7 @@
 # include <sys/stat.h>
 # include <netdb.h>
 # include "../lib/libft/libft.h"
+# include <time.h>
 # define FT_P
 # define ERROR -1
 # define SUCCESS 1
@@ -56,7 +57,10 @@ void				error_exit(char *reason);
 void				put_msg_on_fd(int fd, char *msg, int free_msg);
 t_data				*read_fd(t_env *e, int fd);
 void				merge_data(t_data *data, char *buff, int len_read);
-void				check_data(t_env *e, t_data *data, int fd);
+void				write_data_on_fd(t_env *e, t_data *data, int fd_write);
 void				free_tab(char **tab);
 void				free_data(t_data *data);
+void				clean_data(char *data);
+int					get_status_fd(int fd, int out_fd);
+
 #endif

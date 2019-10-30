@@ -12,17 +12,27 @@
 
 #include "../include/ft_p.h"
 
-void	check_data(t_env *e, t_data *data, int fd)
+void				clean_data(char *data)
 {
-	if (data && data->data)
+	int					i;
+
+	i = -1;
+	while (data && data[++i])
 	{
-		if (!ft_strncmp(data->data, "ERROR", MIN(data->size, 5)))
-		{
-			if (fd != -1)
-				write(fd, data->data, data->size);
-			free_data(data);
-			e->error = 1;
-		}
+		if (data[i] == '\n')
+			data[i] = ' ';
+	}
+	return ;
+}
+
+void	write_data_on_fd(t_env *e, t_data *data, int fd)
+{
+	if (data && data->data && data->size > 0)
+	{
+		write(fd, data->data, data->size);
+		free_data(data);
+	} else {
+		e->error = 1;
 	}
 }
 
@@ -48,25 +58,42 @@ void	merge_data(t_data *data, char *buff, int len_read)
 	data->size += len_read;
 }
 
+int		get_status_fd(int fd, int out)
+{
+	char *status;
+
+	status = NULL;
+	while (get_next_line(fd, &status) > 0)
+	{
+		if (!ft_strncmp("ERROR", status, 5))
+		{
+			if (out == STDOUT)
+				put_msg_on_fd(STDOUT, status, 1);
+			return (0);
+		}
+		if (!ft_strncmp("SUCCESS", status, 5))
+		{
+			if (out == STDOUT && ft_strlen(status) > 9)
+				put_msg_on_fd(STDOUT, status, 1);
+			return (1);
+		}
+		free(status);
+	}
+	return (0);
+}
+
 void	read_fd_write_fd(t_env *e, int fd_read, int fd_write)
 {
 	t_data *data;
 
-	data = (t_data *)malloc(sizeof(t_data));
-	ft_memset(data, 0, sizeof(t_data));
-	while ((e->len_read = read(fd_read, e->buff, BUFFSIZE)) > 0)
+	data = read_fd(e, fd_read);
+	if (data)
 	{
-		e->buff[e->len_read] = 0;
-		merge_data(data, e->buff, e->len_read);
-		ft_bzero(e->buff, e->len_read);
-		if (e->len_read < BUFFSIZE)
-		{
-			write(fd_write, data->data, data->size);
-			free_data(data);
-			break ;
-		}
+		if (data->data && data->size && !ft_strncmp(data->data, "ERROR", MIN(5, data->size)))
+			e->error = 1;
+		write_data_on_fd(e, data, fd_write);
 	}
-	e->error = 1;
+
 }
 
 t_data	*read_fd(t_env *e, int fd)

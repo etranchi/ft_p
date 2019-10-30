@@ -1,40 +1,24 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   free_all.c                                         :+:      :+:    :+:   */
+/*   utils_pwd.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: etranchi <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2019/10/28 12:32:40 by etranchi          #+#    #+#             */
-/*   Updated: 2019/10/28 12:32:41 by etranchi         ###   ########.fr       */
+/*   Created: 2019/10/30 19:51:36 by etranchi          #+#    #+#             */
+/*   Updated: 2019/10/30 19:51:38 by etranchi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/ft_p.h"
 
-int		free_tab(char **tab)
+void					set_pwd(t_env *e)
 {
-	int i;
+	char				*pwd;
 
-	i = -1;
-	if (tab)
-	{
-		while (tab[++i])
-			free(tab[i]);
-		free(tab);
-	}
-	return (1);
-}
-
-void	free_data(t_data *data)
-{
-	if (data)
-	{
-		if (data->data && data->size > 0)
-		{
-			free(data->data);
-			data->data = NULL;
-			free(data);
-		}
-	}
+	pwd = NULL;
+	pwd = getwd(pwd);
+	e->pwd = ft_strdup(pwd);
+	e->curr_pwd = NULL;
+	free(pwd);
 }

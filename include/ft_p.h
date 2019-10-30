@@ -49,20 +49,57 @@ typedef struct		s_data
 	char			*data;
 }					t_data;
 
-void				read_fd_write_fd(t_env *e, int fd_read, int fd_write);
-void				go_read_all_buff(t_env *e);
-void				perform_ls(t_env *e);
+/*
+**	server
+*/
 void				send_cmd(t_env *e);
-void				error_exit(char *reason);
+char				*check_ls_cmd(char *cmd);
+
+/*
+**	perform_server_cmd
+*/
+void				perform_get(t_env *e);
+void				perform_put(t_env *e);
+void				perform_pwd(t_env *e);
+void				perform_cd(t_env *e);
+void				perform_ls(t_env *e);
+
+/*
+**	perform_cmd
+*/
+void				put_file(t_env *e);
+void				get_cd(t_env *e);
+void				get_file(t_env *e);
+void				get_pwd(t_env *e);
+void				get_ls(t_env *e);
+
+/*
+**	utils_pwd
+*/
+void				set_pwd(t_env *e);
+
+/*
+**	utils_fd
+*/
 void				put_msg_on_fd(int fd, char *msg, int free_msg);
 t_data				*read_fd(t_env *e, int fd);
 void				merge_data(t_data *data, char *buff, int len_read);
+void				read_fd_write_fd(t_env *e, int fd_read, int fd_write);
 void				write_data_on_fd(t_env *e, t_data *data, int fd_write);
-int					free_tab(char **tab);
-void				free_data(t_data *data);
-void				clean_data(char *data);
+
+/*
+**	utils
+*/
+void				error_exit(char *reason);
 int					get_status_fd(int fd, int out_fd);
 char				*ft_strjoin_free(char const *s1,
 	char const *s2, int f1, int f2);
+void				error(t_env *e, char *reason, char **tab);
+
+/*
+**	free_all
+*/
+int					free_tab(char **tab);
+void				free_data(t_data *data);
 
 #endif

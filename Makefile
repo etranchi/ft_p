@@ -6,10 +6,10 @@ FLAGS= -Wall -Werror -Wextra
 INC = -I include/
 CC = gcc
 
-SRCS_CLIENT = client_s/client.c utils/utils.c utils/free_all.c
+SRCS_CLIENT = client_s/client.c client_s/perform_cmd.c utils/utils.c utils/free_all.c utils/utils_fd.c utils/utils_pwd.c
 OBJ_CLIENT =  $(SRCS_CLIENT:.c=.o)
 
-SRCS_SERVER = server_s/server.c utils/utils.c utils/free_all.c
+SRCS_SERVER = server_s/server.c server_s/perform_server_cmd.c utils/utils.c utils/free_all.c utils/utils_fd.c utils/utils_pwd.c
 OBJ_SERVER =  $(SRCS_SERVER:.c=.o)
 
 LIBFT = -L lib/libft/ -lft

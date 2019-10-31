@@ -16,6 +16,7 @@
 # include <stdlib.h>
 # include <sys/socket.h>
 # include <sys/types.h>
+# include <dirent.h>
 # include <arpa/inet.h>
 # include <sys/stat.h>
 # include <netdb.h>
@@ -26,7 +27,18 @@
 # define SUCCESS 1
 # define STDOUT 1
 # define BUFFSIZE 4095
-# define CMDS (char*[]){ "ls", "cd", "get", "put", "pwd", "quit", NULL}
+# define L "ls"
+# define C "cd"
+# define P "pwd"
+# define LP "lpwd"
+# define LL "lls"
+# define LC "lcd"
+# define Q "quit"
+# define M "mkdir"
+# define R "rmdir"
+# define U "unlink"
+# define N NULL
+# define CMDS (char*[]){ L, C, "get", "put", P, Q, LL, LC, LP, M, R, U, N}
 # define MIN(a,b) a < b ? a : b
 
 typedef struct		s_env
@@ -53,7 +65,6 @@ typedef struct		s_data
 **	server
 */
 void				send_cmd(t_env *e);
-char				*check_ls_cmd(char *cmd);
 
 /*
 **	perform_server_cmd
@@ -63,6 +74,27 @@ void				perform_put(t_env *e);
 void				perform_pwd(t_env *e);
 void				perform_cd(t_env *e);
 void				perform_ls(t_env *e);
+
+/*
+**	perform_dir_cmd
+*/
+void				perform_mkdir(t_env *e);
+void				perform_rmdir(t_env *e);
+void				perform_unlink(t_env *e);
+
+/*
+**	perform_local_cmd
+*/
+void				perform_lls(t_env *e);
+void				perform_lcd(t_env *e);
+void				perform_lpwd(t_env *e);
+void				perform_quit(void);
+
+/*
+**	send_dir_cmd
+*/
+void				send_rmdir(t_env *e);
+void				send_mkdir(t_env *e);
 
 /*
 **	perform_cmd
@@ -77,6 +109,7 @@ void				get_ls(t_env *e);
 **	utils_pwd
 */
 void				set_pwd(t_env *e);
+char				*check_ls_cmd(char *cmd);
 
 /*
 **	utils_fd

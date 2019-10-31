@@ -15,28 +15,30 @@
 void					create_server(t_env *e)
 {
 	struct protoent		*proto;
-	struct sockaddr_in	sin;
-	unsigned int		cslen;
-	struct sockaddr_in	csin;
+	struct sockaddr_in6	sin;
 
 	proto = getprotobyname("tcp");
 	if (proto == 0)
 		error_exit("Proto.\n");
-	e->sock = socket(PF_INET, SOCK_STREAM, proto->p_proto);
-	sin.sin_family = AF_INET;
-	sin.sin_port = htons(e->port);
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	e->sock = socket(AF_INET6, SOCK_STREAM, proto->p_proto);
+	sin.sin6_family = AF_INET6;
+	sin.sin6_port = htons(e->port);
+	sin.sin6_addr = in6addr_any;
 	if (bind(e->sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
 		error_exit("Binding.\n");
 	if (listen(e->sock, 42) == -1)
 		error_exit("Listen.\n");
-	if ((e->c_sock = accept(e->sock, (struct sockaddr *)&csin, &cslen)) == -1)
-		error_exit("Accept.\n");
 }
 
-void					perform_quit(t_env *e)
+int						perform_cmd_2(t_env *e, char *cmd)
 {
-	put_msg_on_fd(e->c_sock, "SUCCESS | quit", 0);
+	if (!ft_strcmp(cmd, "mkdir"))
+		perform_mkdir(e);
+	else if (!ft_strcmp(cmd, "rmdir"))
+		perform_rmdir(e);
+	else if (!ft_strcmp(cmd, "unlink"))
+		perform_unlink(e);
+	return (0);
 }
 
 void					perform_cmd(t_env *e)
@@ -44,64 +46,49 @@ void					perform_cmd(t_env *e)
 	char				**tab_cmd;
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
-	if (!ft_strncmp(tab_cmd[0], "ls", 2))
+	if (!ft_strcmp(tab_cmd[0], "ls"))
 		perform_ls(e);
-	else if (!ft_strncmp(tab_cmd[0], "cd", 2))
+	else if (!ft_strcmp(tab_cmd[0], "cd"))
 		perform_cd(e);
-	else if (!ft_strncmp(tab_cmd[0], "get", 3))
+	else if (!ft_strcmp(tab_cmd[0], "get"))
 		perform_get(e);
-	else if (!ft_strncmp(tab_cmd[0], "put", 3))
+	else if (!ft_strcmp(tab_cmd[0], "put"))
 		perform_put(e);
-	else if (!ft_strncmp(tab_cmd[0], "pwd", 3))
+	else if (!ft_strcmp(tab_cmd[0], "pwd"))
 		perform_pwd(e);
-	else if (!ft_strncmp(tab_cmd[0], "quit", 4))
-		perform_quit(e);
+	else if (perform_cmd_2(e, tab_cmd[0]))
+		return ;
 	free_tab(tab_cmd);
 }
 
-char					*check_ls_cmd(char *cmd)
+void					init_env(t_env *e, char *port)
 {
-	int					i;
-	int					j;
-	char				*buff;
-
-	if (!cmd)
-		return (NULL);
-	if (!(buff = malloc(sizeof(char) * (ft_strlen(cmd) + 1))))
-		error_exit("Malloc.\n");
-	i = 0;
-	j = 0;
-	buff[0] = cmd[0];
-	while (cmd[++i])
-		if (ft_isdigit(cmd[i]))
-			continue ;
-		else
-			buff[++j] = cmd[i];
-	buff[++j] = '\0';
-	return (buff);
+	ft_memset(e, 0, sizeof(t_env));
+	set_pwd(e);
+	e->port = ft_atoi(port);
+	create_server(e);
 }
 
 int						main(int ac, char **av)
 {
 	t_env				*e;
+	unsigned int		cslen;
+	struct sockaddr_in6	csin;
 
 	if (ac < 2)
 		error_exit("Usage ./server <port>\n");
 	if (!(e = (t_env *)malloc(sizeof(t_env))))
 		error_exit("Malloc.\n");
-	ft_memset(e, 0, sizeof(t_env));
-	set_pwd(e);
-	e->port = ft_atoi(av[1]);
-	create_server(e);
-	while ((get_next_line(e->c_sock, &e->cmd)) > 0)
-	{
-		if (ft_strlen(e->cmd) > 0)
-		{
-			perform_cmd(e);
-			e->error = 0;
-		}
-		free(e->cmd);
-	}
+	init_env(e, av[1]);
+	while ((fork() != -1) && (e->c_sock = accept(e->sock,
+		(struct sockaddr *)&csin, &cslen)) != -1)
+		while ((get_next_line(e->c_sock, &e->cmd)) > 0)
+			if (e->cmd && ft_strlen(e->cmd) > 0)
+			{
+				perform_cmd(e);
+				e->error = 0;
+				free(e->cmd);
+			}
 	close(e->c_sock);
 	close(e->sock);
 	return (0);

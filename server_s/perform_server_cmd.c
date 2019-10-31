@@ -66,7 +66,7 @@ void					perform_pwd(t_env *e)
 {
 	put_msg_on_fd(e->c_sock, "SUCCESS | pwd", 0);
 	nanosleep((const struct timespec[]){{0, 5000000L}}, NULL);
-	put_msg_on_fd(e->c_sock, e->curr_pwd, 0);
+	put_msg_on_fd(e->c_sock, e->curr_pwd ? e->curr_pwd : e->pwd, 0);
 }
 
 void					perform_cd(t_env *e)
@@ -76,7 +76,7 @@ void					perform_cd(t_env *e)
 
 	tab_cmd = ft_strsplit(e->cmd, ' ');
 	if (chdir(tab_cmd[1] ? tab_cmd[1] : ".") == -1 && free_tab(tab_cmd))
-		return (put_msg_on_fd(e->c_sock, "ERROR | ls", 0));
+		return (put_msg_on_fd(e->c_sock, "ERROR | cd", 0));
 	tmp_pwd = getwd(NULL);
 	if (ft_strlen(tmp_pwd) < ft_strlen(e->pwd) && chdir(e->pwd) != -1)
 		put_msg_on_fd(e->c_sock,
@@ -111,12 +111,8 @@ void					perform_ls(t_env *e)
 		cmd = ft_strsplit(e->cmd, ' ');
 		dup2(e->c_sock, 1);
 		dup2(e->c_sock, 2);
-		if (cmd[1] && cmd[1][0] != '-')
-			cmd[1] = ".";
-		else
-			cmd[1] = check_ls_cmd(cmd[1]);
 		if (cmd[2])
-			cmd[2] = ".";
+			cmd[2] = "";
 		execv("/bin/ls", cmd);
 		close(e->c_sock);
 		free_tab(cmd);

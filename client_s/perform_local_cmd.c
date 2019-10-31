@@ -24,12 +24,6 @@ void					perform_lls(t_env *e)
 	{
 		put_msg_on_fd(STDOUT, "SUCCESS | lls", 0);
 		cmd = ft_strsplit(e->cmd, ' ');
-		if (cmd[1] && cmd[1][0] != '-')
-			cmd[1] = ".";
-		else
-			cmd[1] = check_ls_cmd(cmd[1]);
-		if (cmd[2])
-			cmd[2] = ".";
 		execv("/bin/ls", cmd);
 		free_tab(cmd);
 	}

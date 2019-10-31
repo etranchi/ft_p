@@ -81,10 +81,8 @@ void						get_pwd(t_env *e)
 
 void						get_ls(t_env *e)
 {
-	t_data					*data;
-
 	put_msg_on_fd(e->sock, e->cmd, 0);
-	data = read_fd(e, e->sock);
-	write_data_on_fd(e, data, STDOUT);
+	read_fd_write_fd(e, e->sock, STDOUT);
+	nanosleep((const struct timespec[]){{0, 5000000000L}}, NULL);
 	read_fd_write_fd(e, e->sock, STDOUT);
 }

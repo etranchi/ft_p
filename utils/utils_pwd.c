@@ -22,3 +22,25 @@ void					set_pwd(t_env *e)
 	e->curr_pwd = NULL;
 	free(pwd);
 }
+
+char					*check_ls_cmd(char *cmd)
+{
+	int					i;
+	int					j;
+	char				*buff;
+
+	if (!cmd)
+		return (NULL);
+	if (!(buff = malloc(sizeof(char) * (ft_strlen(cmd) + 1))))
+		error_exit("Malloc.\n");
+	i = 0;
+	j = 0;
+	buff[0] = cmd[0];
+	while (cmd[++i])
+		if (ft_isdigit(cmd[i]))
+			continue ;
+		else
+			buff[++j] = cmd[i];
+	buff[++j] = '\0';
+	return (buff);
+}

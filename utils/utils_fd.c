@@ -38,7 +38,9 @@ t_data	*read_fd(t_env *e, int fd)
 		merge_data(data, e->buff, e->len_read);
 		ft_bzero(e->buff, e->len_read);
 		if (e->len_read < BUFFSIZE)
+		{
 			return (data);
+		}
 	}
 	return (NULL);
 }

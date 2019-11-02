@@ -16,14 +16,16 @@ void						create_client(t_env *e, char *addr)
 {
 	struct protoent			*proto;
 	struct sockaddr_in6		sin;
+ 	struct hostent			*hostent;
 
 	proto = getprotobyname("tcp");
 	if (proto == 0)
 		error_exit("Proto.\n");
 	e->sock = socket(AF_INET6, SOCK_STREAM, proto->p_proto);
+	hostent = gethostbyname(addr);
 	sin.sin6_family = AF_INET6;
 	sin.sin6_port = htons(e->port);
-	inet_pton(AF_INET6, addr, &sin.sin6_addr);
+	inet_pton(AF_INET6, hostent->h_addr, &sin.sin6_addr);
 	if (connect(e->sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
 		error_exit("Connect.\n");
 }

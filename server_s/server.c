@@ -71,9 +71,9 @@ void					loop(t_env *e)
 	{
 		if ((e->c_sock = accept(e->sock, (struct sockaddr *)&csin, &cslen)) < 0)
 			error_exit("Accept.\n");
-		if((pid = fork()) == 0)
+		if ((pid = fork()) == 0)
 		{
-			close(e->sock);	
+			close(e->sock);
 			while ((get_next_line(e->c_sock, &e->cmd)) > 0)
 				if (e->cmd && ft_strlen(e->cmd) > 0)
 				{
@@ -89,7 +89,7 @@ void					loop(t_env *e)
 int						main(int ac, char **av)
 {
 	t_env				*e;
-	
+
 	if (ac < 2)
 		error_exit("Usage ./server <port>\n");
 	if (!(e = (t_env *)malloc(sizeof(t_env))))

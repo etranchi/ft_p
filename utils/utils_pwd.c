@@ -12,7 +12,6 @@
 
 #include "../include/ft_p.h"
 
-
 void					set_pwd(t_env *e)
 {
 	char				*pwd;

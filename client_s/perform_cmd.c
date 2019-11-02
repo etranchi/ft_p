@@ -88,7 +88,10 @@ void						get_ls(t_env *e)
 	while ((data = read_fd(e, e->sock)))
 	{
 		if (ft_strstr(data->data, "NTD"))
+		{
+			free_data(data);
 			return ;
+		}
 		else
 			write_data_on_fd(e, data, STDOUT);
 	}

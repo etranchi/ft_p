@@ -65,6 +65,7 @@ typedef struct		s_data
 **	server
 */
 void				send_cmd(t_env *e);
+void				create_server(t_env *e);
 
 /*
 **	perform_server_cmd
@@ -111,6 +112,7 @@ void				get_ls(t_env *e);
 */
 void				set_pwd(t_env *e);
 void				prompt(void);
+void				init_env(t_env *e, char *port);
 
 /*
 **	utils_fd

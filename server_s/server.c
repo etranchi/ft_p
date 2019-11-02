@@ -61,34 +61,41 @@ void					perform_cmd(t_env *e)
 	free_tab(tab_cmd);
 }
 
-void					init_env(t_env *e, char *port)
+void					loop(t_env *e)
 {
-	ft_memset(e, 0, sizeof(t_env));
-	set_pwd(e);
-	e->port = ft_atoi(port);
-	create_server(e);
+	unsigned int		cslen;
+	struct sockaddr_in6	csin;
+	pid_t				pid;
+
+	while (42)
+	{
+		if ((e->c_sock = accept(e->sock, (struct sockaddr *)&csin, &cslen)) < 0)
+			error_exit("Accept.\n");
+		if((pid = fork()) == 0)
+		{
+			close(e->sock);	
+			while ((get_next_line(e->c_sock, &e->cmd)) > 0)
+				if (e->cmd && ft_strlen(e->cmd) > 0)
+				{
+					perform_cmd(e);
+					e->error = 0;
+					free(e->cmd);
+				}
+			break ;
+		}
+	}
 }
 
 int						main(int ac, char **av)
 {
 	t_env				*e;
-	unsigned int		cslen;
-	struct sockaddr_in6	csin;
-
+	
 	if (ac < 2)
 		error_exit("Usage ./server <port>\n");
 	if (!(e = (t_env *)malloc(sizeof(t_env))))
 		error_exit("Malloc.\n");
 	init_env(e, av[1]);
-	while ((fork() != -1) && (e->c_sock = accept(e->sock,
-		(struct sockaddr *)&csin, &cslen)) != -1)
-		while ((get_next_line(e->c_sock, &e->cmd)) > 0)
-			if (e->cmd && ft_strlen(e->cmd) > 0)
-			{
-				perform_cmd(e);
-				e->error = 0;
-				free(e->cmd);
-			}
+	loop(e);
 	close(e->c_sock);
 	close(e->sock);
 	return (0);

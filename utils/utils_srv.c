@@ -1,30 +1,21 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils_pwd.c                                        :+:      :+:    :+:   */
+/*   utils_srv.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: etranchi <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2019/10/30 19:51:36 by etranchi          #+#    #+#             */
-/*   Updated: 2019/10/30 19:51:38 by etranchi         ###   ########.fr       */
+/*   Created: 2019/11/02 17:32:50 by etranchi          #+#    #+#             */
+/*   Updated: 2019/11/02 17:32:51 by etranchi         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/ft_p.h"
 
-
-void					set_pwd(t_env *e)
+void					init_env(t_env *e, char *port)
 {
-	char				*pwd;
-
-	pwd = NULL;
-	pwd = getwd(pwd);
-	e->pwd = ft_strdup(pwd);
-	e->curr_pwd = NULL;
-	free(pwd);
-}
-
-void					prompt(void)
-{
-	ft_putstr("<$(.)(.)$>");
+	ft_memset(e, 0, sizeof(t_env));
+	set_pwd(e);
+	e->port = ft_atoi(port);
+	create_server(e);
 }

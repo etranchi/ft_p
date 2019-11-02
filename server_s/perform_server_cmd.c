@@ -109,17 +109,16 @@ void					perform_ls(t_env *e)
 	{
 		put_msg_on_fd(e->c_sock, "SUCCESS | ls", 0);
 		cmd = ft_strsplit(e->cmd, ' ');
-		dup2(e->c_sock, 1);
-		dup2(e->c_sock, 2);
 		if (cmd[1] && cmd[1][0] != '-')
 			cmd[1] = ".";
-		else
-			cmd[1] = check_ls_cmd(cmd[1]);
 		if (cmd[2])
-			cmd[2] = "";
+			cmd[2] = NULL;
+		dup2(e->c_sock, 1);
+		dup2(e->c_sock, 2);
 		execv("/bin/ls", cmd);
-		close(e->c_sock);
 		free_tab(cmd);
+		exit(0);
 	}
 	wait4(pid, 0, 0, NULL);
+	put_msg_on_fd(e->c_sock, "NTD", 0);
 }

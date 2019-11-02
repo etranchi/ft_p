@@ -95,6 +95,7 @@ void				perform_quit(void);
 */
 void				send_rmdir(t_env *e);
 void				send_mkdir(t_env *e);
+void				send_unlink(t_env *e);
 
 /*
 **	perform_cmd
@@ -109,7 +110,7 @@ void				get_ls(t_env *e);
 **	utils_pwd
 */
 void				set_pwd(t_env *e);
-char				*check_ls_cmd(char *cmd);
+void				prompt(void);
 
 /*
 **	utils_fd

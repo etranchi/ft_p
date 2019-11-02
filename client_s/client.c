@@ -59,6 +59,8 @@ int							send_cmd_2(t_env *e, char *cmd)
 		send_mkdir(e);
 	else if (!ft_strcmp(cmd, "rmdir") && (ret = 1))
 		send_rmdir(e);
+	else if (!ft_strcmp(cmd, "unlink") && (ret = 1))
+		send_unlink(e);
 	else if (!ft_strcmp(cmd, "get") && (ret = 1))
 		get_file(e);
 	else if (!ft_strcmp(cmd, "put") && (ret = 1))
@@ -91,11 +93,6 @@ void						send_cmd(t_env *e)
 		perform_quit();
 	}
 	free_tab(tab_cmd);
-}
-
-void						prompt(void)
-{
-	ft_putstr("<$(.)(.)$>");
 }
 
 int							main(int ac, char **av)

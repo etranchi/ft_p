@@ -23,3 +23,9 @@ void		send_rmdir(t_env *e)
 	put_msg_on_fd(e->sock, e->cmd, 0);
 	read_fd_write_fd(e, e->sock, STDOUT);
 }
+
+void		send_unlink(t_env *e)
+{
+	put_msg_on_fd(e->sock, e->cmd, 0);
+	read_fd_write_fd(e, e->sock, STDOUT);
+}

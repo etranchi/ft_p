@@ -20,6 +20,7 @@
 # include <arpa/inet.h>
 # include <sys/stat.h>
 # include <netdb.h>
+# include <signal.h>
 # include "../lib/libft/libft.h"
 # include <time.h>
 # define FT_P

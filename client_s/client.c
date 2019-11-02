@@ -22,10 +22,13 @@ void						create_client(t_env *e, char *addr)
 	if (proto == 0)
 		error_exit("Proto.\n");
 	e->sock = socket(AF_INET6, SOCK_STREAM, proto->p_proto);
-	hostent = gethostbyname(addr);
+	hostent = NULL;
+	if(!(hostent = gethostbyname2(addr, AF_INET6)))
+		error_exit("gethostbyname.\n");
+	ft_memset(&sin, 0, sizeof(sin));
 	sin.sin6_family = AF_INET6;
 	sin.sin6_port = htons(e->port);
-	inet_pton(AF_INET6, hostent->h_addr, &sin.sin6_addr);
+	sin.sin6_addr = *(struct in6_addr *)hostent->h_addr;
 	if (connect(e->sock, (const struct sockaddr *)&sin, sizeof(sin)) == -1)
 		error_exit("Connect.\n");
 }

@@ -81,7 +81,6 @@ void					loop(t_env *e)
 					e->error = 0;
 					free(e->cmd);
 				}
-
 			exit(1);
 		}
 	}
